@@ -80,3 +80,27 @@ CMakeLists.txt.user*
 .rcc/
 .uic/
 /build*/
+.idea/
+.claude
+.build/
+qtcreator/
+
+# Qt Creator build directories
+build-*
+*-build-*
+
+# Qt Creator user files
+*.user
+*.user.*
+
+# Qt generated files
+*.pro.user*
+.qmake.stash
+*.autosave
+
+# Common build outputs
+*.o
+*.obj
+moc_*.cpp
+ui_*.h
+qrc_*.cpp

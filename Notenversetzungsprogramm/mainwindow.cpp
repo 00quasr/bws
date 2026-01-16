@@ -20,11 +20,9 @@ void MainWindow::on_btnBerechnen_clicked()
     double deutsch = ui->spinDeutsch->value();
     double sport = ui->spinSport->value();
     double religion = ui->spinReligion->value();
-
-    int schlechteHauptfaecher = 0;
-
     double durchschnitt = (mathe + englisch + deutsch + sport + religion) / 5.0;
 
+    int schlechteHauptfaecher = 0;
 
     if (mathe > 4)
         schlechteHauptfaecher = schlechteHauptfaecher + 1;
