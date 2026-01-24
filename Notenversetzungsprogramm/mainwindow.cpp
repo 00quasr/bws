@@ -6,6 +6,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setWindowTitle("Zinsrechner - Kapitalverdopplung");
 }
 
 MainWindow::~MainWindow()
@@ -15,35 +16,41 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_btnBerechnen_clicked()
 {
-    double mathe = ui->spinMathe->value();
-    double englisch = ui->spinEnglisch->value();
-    double deutsch = ui->spinDeutsch->value();
-    double sport = ui->spinSport->value();
-    double religion = ui->spinReligion->value();
-    double durchschnitt = (mathe + englisch + deutsch + sport + religion) / 5.0;
+    double kapital = ui->leStart->text().toDouble();
+    double zinssatz = ui->lineEdit->text().toDouble();
+    double startKapital = kapital;
+    double zielKapital = startKapital * 2;
+    int jahr = 0;
 
-    int schlechteHauptfaecher = 0;
+    ui->lwAnzeige->clear();
 
-    if (mathe > 4)
-        schlechteHauptfaecher = schlechteHauptfaecher + 1;
-    if (englisch > 4)
-        schlechteHauptfaecher = schlechteHauptfaecher + 1;
-    if (deutsch > 4)
-        schlechteHauptfaecher = schlechteHauptfaecher + 1;
+    QString txt = "Startkapital: " + QString::number(kapital, 'f', 2) + " Euro";
+    ui->lwAnzeige->addItem(txt);
+    ui->lwAnzeige->addItem("");
 
+    while (kapital < zielKapital) {
+        jahr = jahr + 1;
+        kapital = kapital + (kapital * zinssatz / 100);
 
-    if (durchschnitt < 4.5) {
-        if (schlechteHauptfaecher < 2) {
-            ui->lblErgebnis->setText("Versetzt!");
-            ui->lblErgebnis->setStyleSheet("QLabel { background-color: lightgreen; padding: 10px; }");
-        }
-        else {
-            ui->lblErgebnis->setText("Schuljahr muss wiederholt werden");
-            ui->lblErgebnis->setStyleSheet("QLabel { background-color: lightcoral; padding: 10px; }");
-        }
+        txt = "nach " + QString::number(jahr) + " Jahr(en): "
+              + QString::number(kapital, 'f', 2) + " Euro";
+        ui->lwAnzeige->addItem(txt);
     }
-    else {
-        ui->lblErgebnis->setText("Schuljahr muss wiederholt werden");
-        ui->lblErgebnis->setStyleSheet("QLabel { background-color: lightcoral; padding: 10px; }");
-    }
+
+    ui->lwAnzeige->addItem("");
+    txt = "Kapital hat sich nach " + QString::number(jahr) + " Jahren verdoppelt";
+    ui->lwAnzeige->addItem(txt);
+}
+
+void MainWindow::on_btnLeeren_clicked()
+{
+    ui->leStart->clear();
+    ui->lineEdit->clear();
+    ui->lwAnzeige->clear();
+    ui->leStart->setFocus();
+}
+
+void MainWindow::on_btnEnde_clicked()
+{
+    this->close();
 }

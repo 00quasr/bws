@@ -4,7 +4,9 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+namespace Ui {
+class MainWindow;
+}
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -16,12 +18,9 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_btnBerechnen_clicked();
-    void on_btnLeeren_clicked();
-    void on_btnEnde_clicked();
+    void on_leEinwurf_eingabe();
 
 private:
     Ui::MainWindow *ui;
 };
-
 #endif // MAINWINDOW_H

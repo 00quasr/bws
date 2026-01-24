@@ -1,0 +1,143 @@
+ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Zinsrechner - Kapitalverdopplung</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   
+   <!-- Label: Startkapital -->
+   <widget class="QLabel" name="lblKapital">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>30</y>
+      <width>120</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Startkapital (€):</string>
+    </property>
+   </widget>
+   
+   <!-- Eingabe: Startkapital -->
+   <widget class="QLineEdit" name="leKapital">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>30</y>
+      <width>150</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+   
+   <!-- Label: Zinssatz -->
+   <widget class="QLabel" name="lblZinssatz">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>70</y>
+      <width>120</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Zinssatz (%):</string>
+    </property>
+   </widget>
+   
+   <!-- Eingabe: Zinssatz -->
+   <widget class="QLineEdit" name="leZinssatz">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>70</y>
+      <width>150</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+   
+   <!-- Button: Berechnen -->
+   <widget class="QPushButton" name="btnBerechnen">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>120</y>
+      <width>100</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Berechnen</string>
+    </property>
+   </widget>
+   
+   <!-- Button: Clear -->
+   <widget class="QPushButton" name="btnClear">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>120</y>
+      <width>100</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Clear</string>
+    </property>
+   </widget>
+   
+   <!-- Button: Ende -->
+   <widget class="QPushButton" name="btnEnde">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>120</y>
+      <width>100</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ende</string>
+    </property>
+   </widget>
+   
+   <!-- ListWidget: Anzeige -->
+   <widget class="QListWidget" name="lwAnzeige">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>170</y>
+      <width>390</width>
+      <height>280</height>
+     </rect>
+    </property>
+   </widget>
+   
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>450</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
