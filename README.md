@@ -8,7 +8,7 @@ Each project focuses on specific programming concepts and demonstrates practical
 
 | Project | Description | Key Concepts |
 |---------|-------------|--------------|
-| [Notenversetzungsprogramm](./Notenversetzungsprogramm) | Capital doubling calculator with compound interest | While loops, financial math |
+| [Notenversetzungsprogramm](./Kapitalverdopplung) | Capital doubling calculator with compound interest | While loops, financial math |
 | [Fahrscheinautomaten](./Fahrscheinautomaten) | Ticket machine with change calculation | Greedy algorithm, arrays |
 | [QuadratwurzelHeron](./QuadratwurzelHeron) | Square root using Heron's method | Iterative approximation |
 | [KapitalBerechnung](./KapitalBerechnung) | Interest calculator template | Qt Designer basics |
@@ -35,7 +35,7 @@ Or open the `.pro` file directly in Qt Creator.
 bws/
 ├── Fahrscheinautomaten/     # Ticket vending machine
 ├── KapitalBerechnung/       # Interest calculator (UI only)
-├── Notenversetzungsprogramm/ # Capital doubling calculator
+├── Kapitalverdopplung/ # Capital doubling calculator
 ├── QuadratwurzelHeron/      # Square root calculator
 └── README.md
 ```
