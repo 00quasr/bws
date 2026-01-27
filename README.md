@@ -1,6 +1,6 @@
 # BWS C++ Projects
 
-Monorepo containing Qt/C++ projects developed during my apprenticeship as an Application Developer at Brühlwiesenschule (2025-2028).
+Monorepo containing Qt/C++ projects developed during my apprenticeship as an Application Developer  (2025-2028).
 
 Each project focuses on specific programming concepts and demonstrates practical applications of algorithms and GUI development.
 
