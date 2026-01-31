@@ -1,0 +1,177 @@
+/* NetPulse NOC (Network Operations Center) Theme
+   High-contrast dark theme optimized for wall displays */
+
+/* Main NOC Display Widget */
+#NocDisplayWidget {
+    background-color: #0a0a0a;
+    color: #ffffff;
+}
+
+/* Header */
+#NocHeader {
+    background-color: transparent;
+}
+
+#NocTitle {
+    font-size: 32px;
+    font-weight: bold;
+    color: #00d4ff;
+    letter-spacing: 4px;
+}
+
+#NocClock {
+    font-size: 28px;
+    font-weight: bold;
+    color: #ffffff;
+    font-family: "Consolas", "Monaco", monospace;
+}
+
+/* Host Grid */
+#NocScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+#NocScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+#NocHostGrid {
+    background-color: transparent;
+}
+
+/* Host Cards */
+#NocHostCard {
+    background-color: #1a1a2e;
+    border: 2px solid #2a2a4e;
+    border-radius: 8px;
+    min-width: 200px;
+    min-height: 120px;
+}
+
+#NocHostCard[statusClass="up"] {
+    border-color: #27ae60;
+    background-color: rgba(39, 174, 96, 0.1);
+}
+
+#NocHostCard[statusClass="down"] {
+    border-color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.2);
+}
+
+#NocHostCard[statusClass="warning"] {
+    border-color: #f39c12;
+    background-color: rgba(243, 156, 18, 0.15);
+}
+
+#NocHostCard[statusClass="unknown"] {
+    border-color: #7f8c8d;
+    background-color: rgba(127, 140, 141, 0.1);
+}
+
+#NocHostName {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+#NocHostStatus {
+    font-size: 24px;
+    font-weight: bold;
+    color: #00d4ff;
+}
+
+#NocHostCard[statusClass="up"] #NocHostStatus {
+    color: #27ae60;
+}
+
+#NocHostCard[statusClass="down"] #NocHostStatus {
+    color: #e74c3c;
+}
+
+#NocHostCard[statusClass="warning"] #NocHostStatus {
+    color: #f39c12;
+}
+
+#NocHostLatency {
+    font-size: 16px;
+    color: #a0a0a0;
+    font-family: "Consolas", "Monaco", monospace;
+}
+
+/* Status Indicator */
+#NocStatusIndicator {
+    border-radius: 8px;
+}
+
+/* Footer */
+#NocFooter {
+    background-color: transparent;
+}
+
+#NocSummary {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+#NocSummary[statusClass="healthy"] {
+    color: #27ae60;
+}
+
+#NocSummary[statusClass="warning"] {
+    color: #f39c12;
+}
+
+#NocSummary[statusClass="critical"] {
+    color: #e74c3c;
+}
+
+#NocHint {
+    font-size: 14px;
+    color: #666666;
+    font-style: italic;
+}
+
+/* Scrollbar styling for NOC mode */
+#NocScrollArea QScrollBar:vertical {
+    background-color: #1a1a2e;
+    width: 12px;
+    border-radius: 6px;
+}
+
+#NocScrollArea QScrollBar::handle:vertical {
+    background-color: #3a3a5e;
+    border-radius: 6px;
+    min-height: 30px;
+}
+
+#NocScrollArea QScrollBar::handle:vertical:hover {
+    background-color: #5a5a8e;
+}
+
+#NocScrollArea QScrollBar::add-line:vertical,
+#NocScrollArea QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+#NocScrollArea QScrollBar:horizontal {
+    background-color: #1a1a2e;
+    height: 12px;
+    border-radius: 6px;
+}
+
+#NocScrollArea QScrollBar::handle:horizontal {
+    background-color: #3a3a5e;
+    border-radius: 6px;
+    min-width: 30px;
+}
+
+#NocScrollArea QScrollBar::handle:horizontal:hover {
+    background-color: #5a5a8e;
+}
+
+#NocScrollArea QScrollBar::add-line:horizontal,
+#NocScrollArea QScrollBar::sub-line:horizontal {
+    width: 0;
+}

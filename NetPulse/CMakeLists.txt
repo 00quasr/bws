@@ -119,6 +119,8 @@ add_executable(netpulse
     src/ui/widgets/dashboard/AlertsWidget.cpp
     src/ui/widgets/dashboard/NetworkOverviewWidget.cpp
     src/ui/widgets/dashboard/LatencyHistoryWidget.cpp
+    src/ui/widgets/noc/NocHostCard.cpp
+    src/ui/widgets/noc/NocDisplayWidget.cpp
     ${UI_RESOURCES}
 )
 target_include_directories(netpulse PRIVATE src)
@@ -146,10 +148,12 @@ if(BUILD_TESTING)
         tests/unit/test_PingService.cpp
         tests/unit/test_SparklineWidget.cpp
         tests/unit/test_DashboardWidget.cpp
+        tests/unit/test_NocHostCard.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
+        src/ui/widgets/noc/NocHostCard.cpp
     )
     target_link_libraries(netpulse_tests PRIVATE
-        netpulse_infra
+        netpulse_viewmodels
         Qt6::Widgets
         Catch2::Catch2WithMain
     )

@@ -11,6 +11,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QSplitter>
+#include <QStackedWidget>
 #include <QStatusBar>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -49,14 +50,16 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::setupUi() {
-    auto* centralWidget = new QWidget(this);
-    setCentralWidget(centralWidget);
+    auto* stackedWidget = new QStackedWidget(this);
+    setCentralWidget(stackedWidget);
 
-    auto* mainLayout = new QVBoxLayout(centralWidget);
+    // Normal mode widget
+    normalModeWidget_ = new QWidget(this);
+    auto* mainLayout = new QVBoxLayout(normalModeWidget_);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     // Create splitter for host list and main content
-    auto* splitter = new QSplitter(Qt::Horizontal, this);
+    auto* splitter = new QSplitter(Qt::Horizontal, normalModeWidget_);
 
     // Host list on the left
     hostListWidget_ = new HostListWidget(this);
@@ -108,6 +111,13 @@ void MainWindow::setupUi() {
 
     mainLayout->addWidget(splitter);
 
+    stackedWidget->addWidget(normalModeWidget_);
+
+    // NOC mode widget
+    nocWidget_ = new NocDisplayWidget(this);
+    connect(nocWidget_, &NocDisplayWidget::exitRequested, this, &MainWindow::onExitNocMode);
+    stackedWidget->addWidget(nocWidget_);
+
     loadDashboardLayout();
 }
 
@@ -134,6 +144,12 @@ void MainWindow::setupMenuBar() {
 
     quitAction_ = fileMenu->addAction("&Quit", this, &QMainWindow::close);
     quitAction_->setShortcut(QKeySequence::Quit);
+
+    auto* viewMenu = menuBar()->addMenu("&View");
+
+    nocModeAction_ = viewMenu->addAction("&NOC Display Mode", this, &MainWindow::onToggleNocMode);
+    nocModeAction_->setShortcut(QKeySequence("F11"));
+    nocModeAction_->setCheckable(true);
 
     auto* toolsMenu = menuBar()->addMenu("&Tools");
 
@@ -579,6 +595,69 @@ void MainWindow::restoreWindowState() {
     } else {
         setGeometry(config.windowX, config.windowY, config.windowWidth, config.windowHeight);
     }
+}
+
+void MainWindow::onToggleNocMode() {
+    if (nocModeActive_) {
+        onExitNocMode();
+    } else {
+        savedStyleSheet_ = styleSheet();
+        savedWindowState_ = windowState();
+
+        QFile themeFile(":/themes/NocTheme.qss");
+        if (themeFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QString nocStyle = themeFile.readAll();
+            setStyleSheet(savedStyleSheet_ + "\n" + nocStyle);
+        }
+
+        auto* stackedWidget = qobject_cast<QStackedWidget*>(centralWidget());
+        if (stackedWidget) {
+            stackedWidget->setCurrentWidget(nocWidget_);
+        }
+
+        menuBar()->hide();
+        statusBar()->hide();
+        for (auto* toolbar : findChildren<QToolBar*>()) {
+            toolbar->hide();
+        }
+
+        showFullScreen();
+        nocWidget_->setFocus();
+        nocWidget_->refresh();
+
+        nocModeActive_ = true;
+        nocModeAction_->setChecked(true);
+    }
+}
+
+void MainWindow::onExitNocMode() {
+    if (!nocModeActive_) {
+        return;
+    }
+
+    setStyleSheet(savedStyleSheet_);
+
+    auto* stackedWidget = qobject_cast<QStackedWidget*>(centralWidget());
+    if (stackedWidget) {
+        stackedWidget->setCurrentWidget(normalModeWidget_);
+    }
+
+    menuBar()->show();
+    statusBar()->show();
+    for (auto* toolbar : findChildren<QToolBar*>()) {
+        toolbar->show();
+    }
+
+    if (savedWindowState_ & Qt::WindowFullScreen) {
+        showFullScreen();
+    } else if (savedWindowState_ & Qt::WindowMaximized) {
+        showMaximized();
+    } else {
+        showNormal();
+    }
+
+    nocModeActive_ = false;
+    nocModeAction_->setChecked(false);
 }
 
 } // namespace netpulse::ui

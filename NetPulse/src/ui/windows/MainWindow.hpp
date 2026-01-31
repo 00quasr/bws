@@ -8,6 +8,7 @@
 #include "ui/widgets/dashboard/DashboardContainer.hpp"
 #include "ui/widgets/dashboard/DashboardWidget.hpp"
 #include "ui/widgets/dashboard/WidgetToolbar.hpp"
+#include "ui/widgets/noc/NocDisplayWidget.hpp"
 
 #include <QAction>
 #include <QLabel>
@@ -51,6 +52,9 @@ private slots:
     void onAddWidget(WidgetType type);
     void onResetLayout();
     void onDashboardLayoutChanged();
+
+    void onToggleNocMode();
+    void onExitNocMode();
 
 private:
     void setupUi();
@@ -100,6 +104,7 @@ private:
     QAction* settingsAction_{nullptr};
     QAction* exportAction_{nullptr};
     QAction* quitAction_{nullptr};
+    QAction* nocModeAction_{nullptr};
 
     // Current selection
     int64_t selectedHostId_{-1};
@@ -107,6 +112,13 @@ private:
     // Widget layout tracking
     int nextWidgetRow_{0};
     int nextWidgetCol_{0};
+
+    // NOC mode
+    NocDisplayWidget* nocWidget_{nullptr};
+    QWidget* normalModeWidget_{nullptr};
+    bool nocModeActive_{false};
+    QString savedStyleSheet_;
+    Qt::WindowStates savedWindowState_{Qt::WindowNoState};
 };
 
 } // namespace netpulse::ui

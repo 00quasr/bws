@@ -3,5 +3,6 @@
     <qresource prefix="/">
         <file alias="themes/DarkTheme.qss">../themes/DarkTheme.qss</file>
         <file alias="themes/LightTheme.qss">../themes/LightTheme.qss</file>
+        <file alias="themes/NocTheme.qss">../themes/NocTheme.qss</file>
     </qresource>
 </RCC>
