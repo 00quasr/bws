@@ -18,6 +18,7 @@ struct Host {
     int criticalThresholdMs{500};
     HostStatus status{HostStatus::Unknown};
     bool enabled{true};
+    std::optional<int64_t> groupId;
     std::chrono::system_clock::time_point createdAt;
     std::optional<std::chrono::system_clock::time_point> lastChecked;
 

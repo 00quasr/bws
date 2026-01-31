@@ -21,6 +21,10 @@ public:
     std::optional<core::Host> findByAddress(const std::string& address);
     std::vector<core::Host> findAll();
     std::vector<core::Host> findEnabled();
+    std::vector<core::Host> findByGroupId(std::optional<int64_t> groupId);
+    std::vector<core::Host> findUngrouped();
+
+    void setHostGroup(int64_t hostId, std::optional<int64_t> groupId);
 
     void updateStatus(int64_t id, core::HostStatus status);
     void updateLastChecked(int64_t id);

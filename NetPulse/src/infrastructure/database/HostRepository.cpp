@@ -28,8 +28,8 @@ HostRepository::HostRepository(std::shared_ptr<Database> db) : db_(std::move(db)
 int64_t HostRepository::insert(const core::Host& host) {
     auto stmt = db_->prepare(R"(
         INSERT INTO hosts (name, address, ping_interval, warning_threshold_ms,
-                          critical_threshold_ms, status, enabled, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                          critical_threshold_ms, status, enabled, group_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
 
     stmt.bind(1, host.name);
@@ -39,7 +39,12 @@ int64_t HostRepository::insert(const core::Host& host) {
     stmt.bind(5, host.criticalThresholdMs);
     stmt.bind(6, static_cast<int>(host.status));
     stmt.bind(7, host.enabled ? 1 : 0);
-    stmt.bind(8, timePointToString(host.createdAt));
+    if (host.groupId) {
+        stmt.bind(8, *host.groupId);
+    } else {
+        stmt.bindNull(8);
+    }
+    stmt.bind(9, timePointToString(host.createdAt));
 
     stmt.step();
     auto id = db_->lastInsertRowId();
@@ -51,7 +56,7 @@ void HostRepository::update(const core::Host& host) {
     auto stmt = db_->prepare(R"(
         UPDATE hosts SET
             name = ?, address = ?, ping_interval = ?, warning_threshold_ms = ?,
-            critical_threshold_ms = ?, status = ?, enabled = ?
+            critical_threshold_ms = ?, status = ?, enabled = ?, group_id = ?
         WHERE id = ?
     )");
 
@@ -62,7 +67,12 @@ void HostRepository::update(const core::Host& host) {
     stmt.bind(5, host.criticalThresholdMs);
     stmt.bind(6, static_cast<int>(host.status));
     stmt.bind(7, host.enabled ? 1 : 0);
-    stmt.bind(8, host.id);
+    if (host.groupId) {
+        stmt.bind(8, *host.groupId);
+    } else {
+        stmt.bindNull(8);
+    }
+    stmt.bind(9, host.id);
 
     stmt.step();
     spdlog::debug("Updated host: {}", host.id);
@@ -134,6 +144,38 @@ int HostRepository::count() {
     return stmt.columnInt(0);
 }
 
+std::vector<core::Host> HostRepository::findByGroupId(std::optional<int64_t> groupId) {
+    std::vector<core::Host> hosts;
+    Statement stmt = groupId
+        ? db_->prepare("SELECT * FROM hosts WHERE group_id = ? ORDER BY name")
+        : db_->prepare("SELECT * FROM hosts WHERE group_id IS NULL ORDER BY name");
+
+    if (groupId) {
+        stmt.bind(1, *groupId);
+    }
+
+    while (stmt.step()) {
+        hosts.push_back(rowToHost(stmt));
+    }
+    return hosts;
+}
+
+std::vector<core::Host> HostRepository::findUngrouped() {
+    return findByGroupId(std::nullopt);
+}
+
+void HostRepository::setHostGroup(int64_t hostId, std::optional<int64_t> groupId) {
+    auto stmt = db_->prepare("UPDATE hosts SET group_id = ? WHERE id = ?");
+    if (groupId) {
+        stmt.bind(1, *groupId);
+    } else {
+        stmt.bindNull(1);
+    }
+    stmt.bind(2, hostId);
+    stmt.step();
+    spdlog::debug("Set host {} group to {}", hostId, groupId.value_or(-1));
+}
+
 core::Host HostRepository::rowToHost(Statement& stmt) {
     core::Host host;
     host.id = stmt.columnInt64(0);
@@ -148,6 +190,11 @@ core::Host HostRepository::rowToHost(Statement& stmt) {
 
     if (!stmt.columnIsNull(9)) {
         host.lastChecked = stringToTimePoint(stmt.columnText(9));
+    }
+
+    // group_id is column 10 (added via ALTER TABLE)
+    if (!stmt.columnIsNull(10)) {
+        host.groupId = stmt.columnInt64(10);
     }
 
     return host;

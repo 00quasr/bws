@@ -3,10 +3,19 @@
 #include "app/Application.hpp"
 
 #include <QHBoxLayout>
+#include <QHeaderView>
 #include <QLabel>
+#include <QMenu>
 #include <QVBoxLayout>
 
 namespace netpulse::ui {
+
+namespace {
+constexpr int ITEM_TYPE_HOST = 1;
+constexpr int ITEM_TYPE_GROUP = 2;
+constexpr int DATA_ROLE_ID = Qt::UserRole;
+constexpr int DATA_ROLE_TYPE = Qt::UserRole + 1;
+} // namespace
 
 HostListWidget::HostListWidget(QWidget* parent) : QWidget(parent) {
     setupUi();
@@ -21,40 +30,127 @@ void HostListWidget::setupUi() {
     headerLabel->setAlignment(Qt::AlignCenter);
     layout->addWidget(headerLabel);
 
-    listWidget_ = new QListWidget(this);
-    listWidget_->setSelectionMode(QAbstractItemView::SingleSelection);
-    listWidget_->setSpacing(2);
-    layout->addWidget(listWidget_);
+    treeWidget_ = new QTreeWidget(this);
+    treeWidget_->setHeaderHidden(true);
+    treeWidget_->setSelectionMode(QAbstractItemView::SingleSelection);
+    treeWidget_->setContextMenuPolicy(Qt::CustomContextMenu);
+    treeWidget_->setIndentation(20);
+    treeWidget_->setAnimated(true);
+    layout->addWidget(treeWidget_);
 
-    connect(listWidget_, &QListWidget::itemSelectionChanged, this,
+    connect(treeWidget_, &QTreeWidget::itemSelectionChanged, this,
             &HostListWidget::onItemSelectionChanged);
-    connect(listWidget_, &QListWidget::itemDoubleClicked, this,
+    connect(treeWidget_, &QTreeWidget::itemDoubleClicked, this,
             &HostListWidget::onItemDoubleClicked);
+    connect(treeWidget_, &QTreeWidget::customContextMenuRequested, this,
+            &HostListWidget::onContextMenuRequested);
 }
 
 void HostListWidget::refreshHosts() {
-    listWidget_->clear();
+    treeWidget_->clear();
     hostItems_.clear();
+    groupItems_.clear();
     statusIndicators_.clear();
 
-    auto& vm = app::Application::instance().hostMonitorViewModel();
-    auto hosts = vm.getAllHosts();
+    populateTree();
+    treeWidget_->expandAll();
+}
 
-    for (const auto& host : hosts) {
-        auto* item = new QListWidgetItem(listWidget_);
-        item->setData(Qt::UserRole, QVariant::fromValue(host.id));
-        item->setSizeHint(QSize(0, 50));
+void HostListWidget::populateTree() {
+    auto& groupVm = app::Application::instance().hostGroupViewModel();
 
-        auto* widget = createHostItemWidget(host);
-        listWidget_->setItemWidget(item, widget);
+    // Add root groups first
+    auto rootGroups = groupVm.getRootGroups();
+    for (const auto& group : rootGroups) {
+        addGroupToTree(group, nullptr);
+    }
 
-        hostItems_[host.id] = item;
+    // Add ungrouped hosts at root level
+    auto ungroupedHosts = groupVm.getUngroupedHosts();
+    for (const auto& host : ungroupedHosts) {
+        auto* item = createHostItem(host);
+        treeWidget_->addTopLevelItem(item);
     }
 }
 
+void HostListWidget::addGroupToTree(const core::HostGroup& group, QTreeWidgetItem* parent) {
+    auto& groupVm = app::Application::instance().hostGroupViewModel();
+
+    auto* groupItem = new QTreeWidgetItem();
+    groupItem->setText(0, QString::fromStdString("📁 " + group.name));
+    groupItem->setData(0, DATA_ROLE_ID, QVariant::fromValue(group.id));
+    groupItem->setData(0, DATA_ROLE_TYPE, ITEM_TYPE_GROUP);
+
+    QFont font = groupItem->font(0);
+    font.setBold(true);
+    groupItem->setFont(0, font);
+
+    if (parent) {
+        parent->addChild(groupItem);
+    } else {
+        treeWidget_->addTopLevelItem(groupItem);
+    }
+
+    groupItems_[group.id] = groupItem;
+
+    // Add child groups recursively
+    auto childGroups = groupVm.getChildGroups(group.id);
+    for (const auto& childGroup : childGroups) {
+        addGroupToTree(childGroup, groupItem);
+    }
+
+    // Add hosts in this group
+    auto hosts = groupVm.getHostsInGroup(group.id);
+    for (const auto& host : hosts) {
+        auto* hostItem = createHostItem(host);
+        groupItem->addChild(hostItem);
+    }
+}
+
+QTreeWidgetItem* HostListWidget::createHostItem(const core::Host& host) {
+    auto* item = new QTreeWidgetItem();
+    item->setData(0, DATA_ROLE_ID, QVariant::fromValue(host.id));
+    item->setData(0, DATA_ROLE_TYPE, ITEM_TYPE_HOST);
+
+    updateHostItemStatus(item, host);
+    hostItems_[host.id] = item;
+
+    return item;
+}
+
+void HostListWidget::updateHostItemStatus(QTreeWidgetItem* item, const core::Host& host) {
+    QString statusIcon;
+
+    switch (host.status) {
+    case core::HostStatus::Up:
+        statusIcon = "🟢";
+        break;
+    case core::HostStatus::Warning:
+        statusIcon = "🟡";
+        break;
+    case core::HostStatus::Down:
+        statusIcon = "🔴";
+        break;
+    default:
+        statusIcon = "⚪";
+        break;
+    }
+
+    QString text = QString("%1 %2 (%3)")
+                       .arg(statusIcon)
+                       .arg(QString::fromStdString(host.name))
+                       .arg(QString::fromStdString(host.address));
+
+    item->setText(0, text);
+    item->setToolTip(0, QString("Status: %1\nAddress: %2\nInterval: %3s")
+                            .arg(QString::fromStdString(host.statusToString()))
+                            .arg(QString::fromStdString(host.address))
+                            .arg(host.pingIntervalSeconds));
+}
+
 void HostListWidget::updateHostStatus(int64_t hostId) {
-    auto it = statusIndicators_.find(hostId);
-    if (it == statusIndicators_.end()) {
+    auto it = hostItems_.find(hostId);
+    if (it == hostItems_.end()) {
         return;
     }
 
@@ -62,75 +158,108 @@ void HostListWidget::updateHostStatus(int64_t hostId) {
     auto host = vm.getHost(hostId);
 
     if (host) {
-        it->second->setStatus(host->status);
+        updateHostItemStatus(it->second, *host);
     }
 }
 
 int64_t HostListWidget::selectedHostId() const {
-    auto items = listWidget_->selectedItems();
+    auto items = treeWidget_->selectedItems();
     if (items.isEmpty()) {
         return -1;
     }
-    return items.first()->data(Qt::UserRole).toLongLong();
+
+    auto* item = items.first();
+    int type = item->data(0, DATA_ROLE_TYPE).toInt();
+
+    if (type == ITEM_TYPE_HOST) {
+        return item->data(0, DATA_ROLE_ID).toLongLong();
+    }
+
+    return -1;
 }
 
 void HostListWidget::onItemSelectionChanged() {
-    emit hostSelected(selectedHostId());
-}
+    auto items = treeWidget_->selectedItems();
+    if (items.isEmpty()) {
+        return;
+    }
 
-void HostListWidget::onItemDoubleClicked(QListWidgetItem* item) {
-    if (item) {
-        emit hostDoubleClicked(item->data(Qt::UserRole).toLongLong());
+    auto* item = items.first();
+    int type = item->data(0, DATA_ROLE_TYPE).toInt();
+    int64_t id = item->data(0, DATA_ROLE_ID).toLongLong();
+
+    if (type == ITEM_TYPE_HOST) {
+        emit hostSelected(id);
+    } else if (type == ITEM_TYPE_GROUP) {
+        emit groupSelected(id);
     }
 }
 
-QWidget* HostListWidget::createHostItemWidget(const core::Host& host) {
-    auto* widget = new QWidget(this);
-    auto* layout = new QHBoxLayout(widget);
-    layout->setContentsMargins(5, 5, 5, 5);
-
-    // Status indicator
-    auto* indicator = new StatusIndicator(this);
-    indicator->setStatus(host.status);
-    indicator->setFixedSize(20, 20);
-    layout->addWidget(indicator);
-    statusIndicators_[host.id] = indicator;
-
-    // Host info
-    auto* infoWidget = new QWidget(widget);
-    auto* infoLayout = new QVBoxLayout(infoWidget);
-    infoLayout->setContentsMargins(0, 0, 0, 0);
-    infoLayout->setSpacing(0);
-
-    auto* nameLabel = new QLabel(QString::fromStdString(host.name), infoWidget);
-    nameLabel->setStyleSheet("font-weight: bold;");
-    infoLayout->addWidget(nameLabel);
-
-    auto* addressLabel = new QLabel(QString::fromStdString(host.address), infoWidget);
-    addressLabel->setStyleSheet("color: gray; font-size: 10px;");
-    infoLayout->addWidget(addressLabel);
-
-    layout->addWidget(infoWidget, 1);
-
-    // Status text
-    auto* statusLabel = new QLabel(QString::fromStdString(host.statusToString()), widget);
-    switch (host.status) {
-    case core::HostStatus::Up:
-        statusLabel->setStyleSheet("color: green;");
-        break;
-    case core::HostStatus::Warning:
-        statusLabel->setStyleSheet("color: orange;");
-        break;
-    case core::HostStatus::Down:
-        statusLabel->setStyleSheet("color: red;");
-        break;
-    default:
-        statusLabel->setStyleSheet("color: gray;");
-        break;
+void HostListWidget::onItemDoubleClicked(QTreeWidgetItem* item, int /*column*/) {
+    if (!item) {
+        return;
     }
-    layout->addWidget(statusLabel);
 
-    return widget;
+    int type = item->data(0, DATA_ROLE_TYPE).toInt();
+
+    if (type == ITEM_TYPE_HOST) {
+        emit hostDoubleClicked(item->data(0, DATA_ROLE_ID).toLongLong());
+    }
+}
+
+void HostListWidget::onContextMenuRequested(const QPoint& pos) {
+    auto* item = treeWidget_->itemAt(pos);
+
+    QMenu menu(this);
+
+    if (!item) {
+        // Context menu on empty space - would add "Add Group" option
+        // but that would be handled at MainWindow level
+        return;
+    }
+
+    int type = item->data(0, DATA_ROLE_TYPE).toInt();
+
+    if (type == ITEM_TYPE_GROUP) {
+        auto* deleteAction = menu.addAction("Delete Group");
+
+        connect(deleteAction, &QAction::triggered, this, [this, item]() {
+            int64_t groupId = item->data(0, DATA_ROLE_ID).toLongLong();
+            auto& vm = app::Application::instance().hostGroupViewModel();
+            vm.removeGroup(groupId);
+            refreshHosts();
+        });
+    } else if (type == ITEM_TYPE_HOST) {
+        auto* moveAction = menu.addMenu("Move to Group");
+        auto& groupVm = app::Application::instance().hostGroupViewModel();
+        auto groups = groupVm.getAllGroups();
+
+        auto* ungroupAction = moveAction->addAction("(Ungrouped)");
+        connect(ungroupAction, &QAction::triggered, this, [this, item]() {
+            int64_t hostId = item->data(0, DATA_ROLE_ID).toLongLong();
+            auto& vm = app::Application::instance().hostGroupViewModel();
+            vm.assignHostToGroup(hostId, std::nullopt);
+            refreshHosts();
+        });
+
+        if (!groups.empty()) {
+            moveAction->addSeparator();
+        }
+
+        for (const auto& group : groups) {
+            auto* action = moveAction->addAction(QString::fromStdString(group.name));
+            connect(action, &QAction::triggered, this, [this, item, groupId = group.id]() {
+                int64_t hostId = item->data(0, DATA_ROLE_ID).toLongLong();
+                auto& vm = app::Application::instance().hostGroupViewModel();
+                vm.assignHostToGroup(hostId, groupId);
+                refreshHosts();
+            });
+        }
+    }
+
+    if (!menu.isEmpty()) {
+        menu.exec(treeWidget_->mapToGlobal(pos));
+    }
 }
 
 } // namespace netpulse::ui

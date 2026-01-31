@@ -85,6 +85,7 @@ void Application::initializeComponents() {
         std::make_unique<viewmodels::DashboardViewModel>(database_, pingService_);
     hostMonitorViewModel_ =
         std::make_unique<viewmodels::HostMonitorViewModel>(database_, pingService_);
+    hostGroupViewModel_ = std::make_unique<viewmodels::HostGroupViewModel>(database_);
     alertsViewModel_ = std::make_unique<viewmodels::AlertsViewModel>(database_);
 
     // Configure alert thresholds

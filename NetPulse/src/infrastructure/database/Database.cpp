@@ -257,6 +257,26 @@ void Database::runMigrations() {
         setVersion(1);
     }
 
+    // Migration 2: Add host groups
+    if (currentVersion < 2) {
+        spdlog::info("Applying migration 2: Add host groups");
+        execute(R"(
+            CREATE TABLE IF NOT EXISTS host_groups (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                parent_id INTEGER REFERENCES host_groups(id) ON DELETE SET NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        )");
+
+        execute("CREATE INDEX IF NOT EXISTS idx_host_groups_parent ON host_groups(parent_id)");
+
+        execute("ALTER TABLE hosts ADD COLUMN group_id INTEGER REFERENCES host_groups(id) ON DELETE SET NULL");
+
+        setVersion(2);
+    }
+
     spdlog::info("Database migrations complete. Version: {}", getCurrentVersion());
 }
 

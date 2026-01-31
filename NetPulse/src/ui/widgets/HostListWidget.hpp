@@ -1,9 +1,10 @@
 #pragma once
 
 #include "core/types/Host.hpp"
+#include "core/types/HostGroup.hpp"
 #include "ui/widgets/StatusIndicator.hpp"
 
-#include <QListWidget>
+#include <QTreeWidget>
 #include <QWidget>
 #include <map>
 
@@ -23,17 +24,23 @@ public:
 signals:
     void hostSelected(int64_t hostId);
     void hostDoubleClicked(int64_t hostId);
+    void groupSelected(int64_t groupId);
 
 private slots:
     void onItemSelectionChanged();
-    void onItemDoubleClicked(QListWidgetItem* item);
+    void onItemDoubleClicked(QTreeWidgetItem* item, int column);
+    void onContextMenuRequested(const QPoint& pos);
 
 private:
     void setupUi();
-    QWidget* createHostItemWidget(const core::Host& host);
+    void populateTree();
+    void addGroupToTree(const core::HostGroup& group, QTreeWidgetItem* parent = nullptr);
+    QTreeWidgetItem* createHostItem(const core::Host& host);
+    void updateHostItemStatus(QTreeWidgetItem* item, const core::Host& host);
 
-    QListWidget* listWidget_{nullptr};
-    std::map<int64_t, QListWidgetItem*> hostItems_;
+    QTreeWidget* treeWidget_{nullptr};
+    std::map<int64_t, QTreeWidgetItem*> hostItems_;
+    std::map<int64_t, QTreeWidgetItem*> groupItems_;
     std::map<int64_t, StatusIndicator*> statusIndicators_;
 };
 

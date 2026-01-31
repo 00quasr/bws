@@ -35,6 +35,7 @@ endif()
 # Core types library (Qt-independent)
 add_library(netpulse_core STATIC
     src/core/types/Host.cpp
+    src/core/types/HostGroup.cpp
     src/core/types/PingResult.cpp
     src/core/types/PortScanResult.cpp
     src/core/types/NetworkInterface.cpp
@@ -51,6 +52,7 @@ add_library(netpulse_infra STATIC
     src/infrastructure/network/PortScanner.cpp
     src/infrastructure/database/Database.cpp
     src/infrastructure/database/HostRepository.cpp
+    src/infrastructure/database/HostGroupRepository.cpp
     src/infrastructure/database/MetricsRepository.cpp
     src/infrastructure/crypto/SecureStorage.cpp
     src/infrastructure/config/ConfigManager.cpp
@@ -71,12 +73,19 @@ if(unofficial-sodium_FOUND)
 else()
     target_link_libraries(netpulse_infra PUBLIC PkgConfig::sodium)
 endif()
+
+# Windows-specific libraries for ICMP ping
+if(WIN32)
+    target_link_libraries(netpulse_infra PUBLIC ws2_32 iphlpapi)
+endif()
+
 set_compiler_warnings(netpulse_infra)
 
 # ViewModels library
 add_library(netpulse_viewmodels STATIC
     src/viewmodels/DashboardViewModel.cpp
     src/viewmodels/HostMonitorViewModel.cpp
+    src/viewmodels/HostGroupViewModel.cpp
     src/viewmodels/AlertsViewModel.cpp
 )
 target_include_directories(netpulse_viewmodels PUBLIC src)
@@ -122,7 +131,9 @@ if(BUILD_TESTING)
 
     add_executable(netpulse_tests
         tests/unit/test_Host.cpp
+        tests/unit/test_HostGroup.cpp
         tests/unit/test_Database.cpp
+        tests/unit/test_PingService.cpp
     )
     target_link_libraries(netpulse_tests PRIVATE
         netpulse_infra

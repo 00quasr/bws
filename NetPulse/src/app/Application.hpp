@@ -7,6 +7,7 @@
 #include "infrastructure/network/PortScanner.hpp"
 #include "viewmodels/AlertsViewModel.hpp"
 #include "viewmodels/DashboardViewModel.hpp"
+#include "viewmodels/HostGroupViewModel.hpp"
 #include "viewmodels/HostMonitorViewModel.hpp"
 
 #include <QApplication>
@@ -30,6 +31,7 @@ public:
 
     viewmodels::DashboardViewModel& dashboardViewModel() { return *dashboardViewModel_; }
     viewmodels::HostMonitorViewModel& hostMonitorViewModel() { return *hostMonitorViewModel_; }
+    viewmodels::HostGroupViewModel& hostGroupViewModel() { return *hostGroupViewModel_; }
     viewmodels::AlertsViewModel& alertsViewModel() { return *alertsViewModel_; }
 
     static Application& instance();
@@ -48,6 +50,7 @@ private:
 
     std::unique_ptr<viewmodels::DashboardViewModel> dashboardViewModel_;
     std::unique_ptr<viewmodels::HostMonitorViewModel> hostMonitorViewModel_;
+    std::unique_ptr<viewmodels::HostGroupViewModel> hostGroupViewModel_;
     std::unique_ptr<viewmodels::AlertsViewModel> alertsViewModel_;
 
     static Application* instance_;
