@@ -14,6 +14,7 @@
 #include <QStatusBar>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <fstream>
 
 namespace netpulse::ui {
 
@@ -66,14 +67,26 @@ void MainWindow::setupUi() {
     // Tab widget for main content
     tabWidget_ = new QTabWidget(this);
 
-    // Dashboard tab with chart
+    // Dashboard tab with widgets
     auto* dashboardWidget = new QWidget(this);
     auto* dashboardLayout = new QVBoxLayout(dashboardWidget);
+    dashboardLayout->setContentsMargins(0, 0, 0, 0);
+    dashboardLayout->setSpacing(0);
 
-    latencyChartWidget_ = new LatencyChartWidget(this);
-    dashboardLayout->addWidget(latencyChartWidget_);
+    widgetToolbar_ = new WidgetToolbar(dashboardWidget);
+    dashboardLayout->addWidget(widgetToolbar_);
+
+    dashboardContainer_ = new DashboardContainer(dashboardWidget);
+    dashboardLayout->addWidget(dashboardContainer_, 1);
 
     tabWidget_->addTab(dashboardWidget, "Dashboard");
+
+    // Classic chart tab for detailed host view
+    auto* chartWidget = new QWidget(this);
+    auto* chartLayout = new QVBoxLayout(chartWidget);
+    latencyChartWidget_ = new LatencyChartWidget(this);
+    chartLayout->addWidget(latencyChartWidget_);
+    tabWidget_->addTab(chartWidget, "Host Details");
 
     // Network Interfaces tab
     interfaceStatsWidget_ = new QWidget(this);
@@ -94,6 +107,8 @@ void MainWindow::setupUi() {
     splitter->setStretchFactor(1, 1);
 
     mainLayout->addWidget(splitter);
+
+    loadDashboardLayout();
 }
 
 void MainWindow::setupMenuBar() {
@@ -196,6 +211,12 @@ void MainWindow::setupConnections() {
             [this](int64_t) { hostListWidget_->refreshHosts(); });
     connect(&app.hostMonitorViewModel(), &viewmodels::HostMonitorViewModel::hostUpdated, this,
             [this](int64_t) { hostListWidget_->refreshHosts(); });
+
+    // Dashboard widget toolbar
+    connect(widgetToolbar_, &WidgetToolbar::addWidgetRequested, this, &MainWindow::onAddWidget);
+    connect(widgetToolbar_, &WidgetToolbar::resetLayoutRequested, this, &MainWindow::onResetLayout);
+    connect(dashboardContainer_, &DashboardContainer::layoutChanged, this,
+            &MainWindow::onDashboardLayoutChanged);
 }
 
 void MainWindow::onAddHost() {
@@ -430,6 +451,89 @@ void MainWindow::refreshInterfaceStats() {
     static_cast<QVBoxLayout*>(layout)->addStretch();
 }
 
+void MainWindow::onAddWidget(WidgetType type) {
+    int row = nextWidgetRow_;
+    int col = nextWidgetCol_;
+
+    dashboardContainer_->addWidget(type, row, col);
+
+    nextWidgetCol_++;
+    if (nextWidgetCol_ >= 3) {
+        nextWidgetCol_ = 0;
+        nextWidgetRow_++;
+    }
+
+    statusLabel_->setText(QString("Added %1 widget").arg(widgetTypeToString(type)));
+}
+
+void MainWindow::onResetLayout() {
+    dashboardContainer_->loadDefaultLayout();
+    nextWidgetRow_ = 2;
+    nextWidgetCol_ = 0;
+    statusLabel_->setText("Dashboard layout reset to default");
+}
+
+void MainWindow::onDashboardLayoutChanged() {
+    saveDashboardLayout();
+}
+
+void MainWindow::saveDashboardLayout() {
+    auto configs = dashboardContainer_->getConfiguration();
+
+    nlohmann::json layoutJson = nlohmann::json::array();
+    for (const auto& config : configs) {
+        layoutJson.push_back(config.toJson());
+    }
+
+    auto& configManager = app::Application::instance().config();
+    std::string configPath = configManager.configDir() + "/dashboard_layout.json";
+
+    std::ofstream file(configPath);
+    if (file.is_open()) {
+        file << layoutJson.dump(2);
+    }
+}
+
+void MainWindow::loadDashboardLayout() {
+    auto& configManager = app::Application::instance().config();
+    std::string configPath = configManager.configDir() + "/dashboard_layout.json";
+
+    std::ifstream file(configPath);
+    if (file.is_open()) {
+        try {
+            nlohmann::json layoutJson;
+            file >> layoutJson;
+
+            std::vector<WidgetConfig> configs;
+            for (const auto& item : layoutJson) {
+                configs.push_back(WidgetConfig::fromJson(item));
+            }
+
+            if (!configs.empty()) {
+                dashboardContainer_->loadConfiguration(configs);
+
+                int maxRow = 0;
+                int maxCol = 0;
+                for (const auto& config : configs) {
+                    maxRow = std::max(maxRow, config.row + config.rowSpan);
+                    maxCol = std::max(maxCol, config.col + 1);
+                }
+                nextWidgetRow_ = maxRow;
+                nextWidgetCol_ = maxCol >= 3 ? 0 : maxCol;
+                if (maxCol >= 3) {
+                    nextWidgetRow_++;
+                }
+                return;
+            }
+        } catch (...) {
+        }
+    }
+
+    dashboardContainer_->loadDefaultLayout();
+    nextWidgetRow_ = 2;
+    nextWidgetCol_ = 0;
+}
+
 void MainWindow::closeEvent(QCloseEvent* event) {
     auto& config = app::Application::instance().config().config();
 
@@ -438,6 +542,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         event->ignore();
     } else {
         saveWindowState();
+        saveDashboardLayout();
         event->accept();
     }
 }

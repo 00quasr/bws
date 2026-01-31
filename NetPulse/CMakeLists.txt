@@ -110,6 +110,15 @@ add_executable(netpulse
     src/ui/widgets/HostListWidget.cpp
     src/ui/widgets/SparklineWidget.cpp
     src/ui/widgets/StatusIndicator.cpp
+    src/ui/widgets/dashboard/DashboardWidget.cpp
+    src/ui/widgets/dashboard/DashboardContainer.cpp
+    src/ui/widgets/dashboard/WidgetFactory.cpp
+    src/ui/widgets/dashboard/WidgetToolbar.cpp
+    src/ui/widgets/dashboard/StatisticsWidget.cpp
+    src/ui/widgets/dashboard/HostStatusWidget.cpp
+    src/ui/widgets/dashboard/AlertsWidget.cpp
+    src/ui/widgets/dashboard/NetworkOverviewWidget.cpp
+    src/ui/widgets/dashboard/LatencyHistoryWidget.cpp
     ${UI_RESOURCES}
 )
 target_include_directories(netpulse PRIVATE src)
@@ -136,9 +145,12 @@ if(BUILD_TESTING)
         tests/unit/test_Database.cpp
         tests/unit/test_PingService.cpp
         tests/unit/test_SparklineWidget.cpp
+        tests/unit/test_DashboardWidget.cpp
+        src/ui/widgets/dashboard/DashboardWidget.cpp
     )
     target_link_libraries(netpulse_tests PRIVATE
         netpulse_infra
+        Qt6::Widgets
         Catch2::Catch2WithMain
     )
 

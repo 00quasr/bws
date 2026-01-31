@@ -59,6 +59,7 @@ public:
 
     std::filesystem::path configPath() const { return configPath_; }
     std::filesystem::path databasePath() const;
+    std::string configDir() const { return configDir_.string(); }
 
 private:
     nlohmann::json toJson() const;

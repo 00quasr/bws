@@ -5,6 +5,9 @@
 #include "core/types/PingResult.hpp"
 #include "ui/widgets/HostListWidget.hpp"
 #include "ui/widgets/LatencyChartWidget.hpp"
+#include "ui/widgets/dashboard/DashboardContainer.hpp"
+#include "ui/widgets/dashboard/DashboardWidget.hpp"
+#include "ui/widgets/dashboard/WidgetToolbar.hpp"
 
 #include <QAction>
 #include <QLabel>
@@ -45,6 +48,10 @@ private slots:
     void updateStatusBar();
     void refreshInterfaceStats();
 
+    void onAddWidget(WidgetType type);
+    void onResetLayout();
+    void onDashboardLayoutChanged();
+
 private:
     void setupUi();
     void setupMenuBar();
@@ -56,11 +63,17 @@ private:
     void loadTheme(const QString& themeName);
     void saveWindowState();
     void restoreWindowState();
+    void saveDashboardLayout();
+    void loadDashboardLayout();
 
     // Main UI components
     QTabWidget* tabWidget_{nullptr};
     HostListWidget* hostListWidget_{nullptr};
     LatencyChartWidget* latencyChartWidget_{nullptr};
+
+    // Dashboard widgets
+    DashboardContainer* dashboardContainer_{nullptr};
+    WidgetToolbar* widgetToolbar_{nullptr};
 
     // Network interface stats
     QWidget* interfaceStatsWidget_{nullptr};
@@ -90,6 +103,10 @@ private:
 
     // Current selection
     int64_t selectedHostId_{-1};
+
+    // Widget layout tracking
+    int nextWidgetRow_{0};
+    int nextWidgetCol_{0};
 };
 
 } // namespace netpulse::ui
