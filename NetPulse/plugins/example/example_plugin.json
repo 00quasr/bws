@@ -1,0 +1,24 @@
+{
+    "id": "com.netpulse.example",
+    "name": "Example Plugin",
+    "version": "1.0.0",
+    "author": "NetPulse Team",
+    "description": "Example plugin demonstrating the plugin API",
+    "license": "MIT",
+    "type": 2,
+    "minAppVersion": "1.0.0",
+    "capabilities": [
+        {
+            "name": "data-processor",
+            "version": "1.0.0",
+            "description": "Processes ping results and alerts"
+        }
+    ],
+    "dependencies": [],
+    "enabled": true,
+    "configuration": {
+        "logLevel": "info",
+        "processEnabled": true,
+        "tagPrefix": "example"
+    }
+}

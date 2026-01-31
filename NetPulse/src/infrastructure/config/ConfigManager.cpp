@@ -108,6 +108,18 @@ nlohmann::json ConfigManager::toJson() const {
     j["rest_api"]["enabled"] = config_.restApiEnabled;
     j["rest_api"]["port"] = config_.restApiPort;
 
+    // Plugins
+    j["plugins"]["enabled"] = config_.pluginsEnabled;
+    j["plugins"]["list"] = nlohmann::json::array();
+    for (const auto& plugin : config_.plugins) {
+        nlohmann::json p;
+        p["id"] = plugin.id;
+        p["path"] = plugin.path;
+        p["enabled"] = plugin.enabled;
+        p["settings"] = plugin.settings;
+        j["plugins"]["list"].push_back(p);
+    }
+
     // Encrypted values
     if (!secureValues_.empty()) {
         j["secure"] = secureValues_;
@@ -188,6 +200,23 @@ void ConfigManager::fromJson(const nlohmann::json& j) {
         config_.restApiPort = api.value("port", 8080);
     }
 
+    // Plugins
+    if (j.contains("plugins")) {
+        const auto& p = j["plugins"];
+        config_.pluginsEnabled = p.value("enabled", true);
+        config_.plugins.clear();
+        if (p.contains("list") && p["list"].is_array()) {
+            for (const auto& plugin : p["list"]) {
+                PluginConfig pc;
+                pc.id = plugin.value("id", "");
+                pc.path = plugin.value("path", "");
+                pc.enabled = plugin.value("enabled", true);
+                pc.settings = plugin.value("settings", nlohmann::json::object());
+                config_.plugins.push_back(pc);
+            }
+        }
+    }
+
     // Secure values
     if (j.contains("secure")) {
         secureValues_ = j["secure"];
@@ -213,6 +242,14 @@ std::optional<std::string> ConfigManager::getSecureValue(const std::string& key)
 
 std::filesystem::path ConfigManager::databasePath() const {
     return configDir_ / "netpulse.db";
+}
+
+std::filesystem::path ConfigManager::pluginDir() const {
+    return configDir_ / "plugins";
+}
+
+std::filesystem::path ConfigManager::pluginStatePath() const {
+    return configDir_ / "plugin_state.json";
 }
 
 } // namespace netpulse::infra

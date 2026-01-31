@@ -48,6 +48,14 @@ target_include_directories(netpulse_core PUBLIC src)
 target_link_libraries(netpulse_core PUBLIC nlohmann_json::nlohmann_json)
 set_compiler_warnings(netpulse_core)
 
+# Export plugin interface for external plugins
+add_library(netpulse_plugin_interface INTERFACE)
+target_include_directories(netpulse_plugin_interface INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(netpulse_plugin_interface INTERFACE netpulse_core)
+
 # Infrastructure library
 add_library(netpulse_infra STATIC
     src/infrastructure/network/AsioContext.cpp
@@ -66,6 +74,8 @@ add_library(netpulse_infra STATIC
     src/infrastructure/notifications/HttpClient.cpp
     src/infrastructure/notifications/NotificationService.cpp
     src/infrastructure/api/RestApiServer.cpp
+    src/infrastructure/plugin/PluginManager.cpp
+    src/infrastructure/plugin/PluginContext.cpp
 )
 target_include_directories(netpulse_infra PUBLIC src)
 if(ASIO_INCLUDE_DIR)
@@ -89,6 +99,11 @@ endif()
 # Windows-specific libraries for ICMP ping
 if(WIN32)
     target_link_libraries(netpulse_infra PUBLIC ws2_32 iphlpapi)
+endif()
+
+# Dynamic library loading
+if(NOT WIN32)
+    target_link_libraries(netpulse_infra PUBLIC ${CMAKE_DL_LIBS})
 endif()
 
 set_compiler_warnings(netpulse_infra)
@@ -170,6 +185,7 @@ if(BUILD_TESTING)
         tests/unit/test_NotificationService.cpp
         tests/unit/test_RestApiServer.cpp
         tests/unit/test_SnmpService.cpp
+        tests/unit/test_PluginSystem.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )
@@ -185,5 +201,21 @@ if(BUILD_TESTING)
     catch_discover_tests(netpulse_tests)
 endif()
 
+# Example plugin (optional)
+option(BUILD_EXAMPLE_PLUGIN "Build example plugin" OFF)
+if(BUILD_EXAMPLE_PLUGIN)
+    add_library(example_plugin SHARED
+        plugins/example/ExamplePlugin.cpp
+    )
+    target_link_libraries(example_plugin PRIVATE
+        netpulse_plugin_interface
+    )
+    set_target_properties(example_plugin PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "netpulse_example_plugin"
+    )
+endif()
+
 # Installation
 install(TARGETS netpulse RUNTIME DESTINATION bin)
+install(DIRECTORY src/core/plugin/ DESTINATION include/netpulse/plugin FILES_MATCHING PATTERN "*.hpp")

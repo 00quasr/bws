@@ -30,6 +30,11 @@ Application::~Application() {
         restApiServer_->stop();
     }
 
+    if (pluginManager_) {
+        pluginManager_->savePluginStates(config_->pluginStatePath());
+        pluginManager_->shutdownAllPlugins();
+    }
+
     if (dashboardViewModel_) {
         dashboardViewModel_->stopMonitoring();
     }
@@ -114,7 +119,42 @@ void Application::initializeComponents() {
         restApiServer_->start();
     }
 
+    // Initialize plugins
+    initializePlugins();
+
     spdlog::info("Application components initialized");
+}
+
+void Application::initializePlugins() {
+    if (!config_->config().pluginsEnabled) {
+        spdlog::info("Plugins disabled in configuration");
+        return;
+    }
+
+    auto pluginDir = config_->pluginDir();
+    std::filesystem::create_directories(pluginDir);
+
+    pluginManager_ = std::make_unique<infra::PluginManager>(
+        pluginDir,
+        config_->configPath().parent_path(),
+        config_->configPath().parent_path(),
+        qtApp_->applicationVersion().toStdString());
+
+    // Register core services for plugins
+    pluginManager_->registerService("pingService", pingService_.get());
+    pluginManager_->registerService("portScanner", portScanner_.get());
+    pluginManager_->registerService("database", database_.get());
+    pluginManager_->registerService("notificationService", notificationService_.get());
+    pluginManager_->registerService("asioContext", asioContext_.get());
+
+    // Load saved plugin states
+    pluginManager_->loadPluginStates(config_->pluginStatePath());
+
+    // Initialize all loaded plugins
+    pluginManager_->initializeAllPlugins();
+
+    spdlog::info("Plugin system initialized, {} plugins loaded",
+        pluginManager_->getLoadedPluginIds().size());
 }
 
 void Application::performCleanup() {

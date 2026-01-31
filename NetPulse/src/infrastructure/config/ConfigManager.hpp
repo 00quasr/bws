@@ -10,6 +10,13 @@
 
 namespace netpulse::infra {
 
+struct PluginConfig {
+    std::string id;
+    std::string path;
+    bool enabled{true};
+    nlohmann::json settings;
+};
+
 struct AppConfig {
     // General settings
     std::string theme{"dark"};
@@ -50,6 +57,10 @@ struct AppConfig {
     // REST API settings
     bool restApiEnabled{false};
     uint16_t restApiPort{8080};
+
+    // Plugin settings
+    bool pluginsEnabled{true};
+    std::vector<PluginConfig> plugins;
 };
 
 class ConfigManager {
@@ -68,6 +79,8 @@ public:
 
     std::filesystem::path configPath() const { return configPath_; }
     std::filesystem::path databasePath() const;
+    std::filesystem::path pluginDir() const;
+    std::filesystem::path pluginStatePath() const;
     std::string configDir() const { return configDir_.string(); }
 
 private:

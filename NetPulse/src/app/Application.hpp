@@ -7,6 +7,7 @@
 #include "infrastructure/network/PingService.hpp"
 #include "infrastructure/network/PortScanner.hpp"
 #include "infrastructure/notifications/NotificationService.hpp"
+#include "infrastructure/plugin/PluginManager.hpp"
 #include "viewmodels/AlertsViewModel.hpp"
 #include "viewmodels/DashboardViewModel.hpp"
 #include "viewmodels/HostGroupViewModel.hpp"
@@ -37,12 +38,14 @@ public:
     viewmodels::AlertsViewModel& alertsViewModel() { return *alertsViewModel_; }
     infra::NotificationService& notificationService() { return *notificationService_; }
     infra::RestApiServer* restApiServer() { return restApiServer_.get(); }
+    infra::PluginManager* pluginManager() { return pluginManager_.get(); }
 
     static Application& instance();
 
 private:
     void initializeLogging();
     void initializeComponents();
+    void initializePlugins();
     void performCleanup();
 
     std::unique_ptr<QApplication> qtApp_;
@@ -58,6 +61,7 @@ private:
     std::unique_ptr<viewmodels::AlertsViewModel> alertsViewModel_;
     std::shared_ptr<infra::NotificationService> notificationService_;
     std::shared_ptr<infra::RestApiServer> restApiServer_;
+    std::unique_ptr<infra::PluginManager> pluginManager_;
 
     static Application* instance_;
 };
