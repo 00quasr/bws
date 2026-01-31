@@ -2,7 +2,7 @@
 
 #include <asio.hpp>
 #include <atomic>
-#include <memory>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -29,8 +29,10 @@ public:
     static AsioContext& instance();
 
 private:
+    using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
+
     asio::io_context ioContext_;
-    std::unique_ptr<asio::io_context::work> work_;
+    std::optional<WorkGuard> workGuard_;
     std::vector<std::thread> threads_;
     std::atomic<bool> running_{false};
     size_t threadCount_;

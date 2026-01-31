@@ -18,7 +18,7 @@ void AsioContext::start() {
         return;
     }
 
-    work_ = std::make_unique<asio::io_context::work>(ioContext_);
+    workGuard_.emplace(asio::make_work_guard(ioContext_));
 
     threads_.reserve(threadCount_);
     for (size_t i = 0; i < threadCount_; ++i) {
@@ -37,7 +37,7 @@ void AsioContext::stop() {
         return;
     }
 
-    work_.reset();
+    workGuard_.reset();
     ioContext_.stop();
 
     for (auto& thread : threads_) {

@@ -6,9 +6,10 @@
 #include <cstring>
 #include <random>
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -18,9 +19,10 @@ namespace netpulse::infra {
 
 namespace {
 
-constexpr uint8_t ICMP_ECHO_REQUEST = 8;
-constexpr uint8_t ICMP_ECHO_REPLY = 0;
+constexpr uint8_t ICMP_ECHO_REQUEST_TYPE = 8;
+constexpr uint8_t ICMP_ECHO_REPLY_TYPE = 0;
 
+#if defined(__linux__) || defined(__APPLE__)
 std::string resolveHostname(const std::string& hostname) {
     struct addrinfo hints {};
     hints.ai_family = AF_INET;
@@ -38,6 +40,7 @@ std::string resolveHostname(const std::string& hostname) {
 
     return ipStr;
 }
+#endif
 
 } // namespace
 
@@ -55,13 +58,13 @@ uint16_t PingService::calculateChecksum(const uint8_t* data, size_t length) {
     uint32_t sum = 0;
 
     while (length > 1) {
-        sum += (static_cast<uint16_t>(data[0]) << 8) | data[1];
+        sum += static_cast<uint32_t>((static_cast<uint16_t>(data[0]) << 8) | data[1]);
         data += 2;
         length -= 2;
     }
 
     if (length == 1) {
-        sum += static_cast<uint16_t>(data[0]) << 8;
+        sum += static_cast<uint32_t>(static_cast<uint16_t>(data[0]) << 8);
     }
 
     while (sum >> 16) {
@@ -75,10 +78,10 @@ std::vector<uint8_t> PingService::buildIcmpEchoRequest(uint16_t identifier, uint
     std::vector<uint8_t> packet(64, 0);
 
     // ICMP header
-    packet[0] = ICMP_ECHO_REQUEST;  // Type
-    packet[1] = 0;                   // Code
-    packet[2] = 0;                   // Checksum (high byte)
-    packet[3] = 0;                   // Checksum (low byte)
+    packet[0] = ICMP_ECHO_REQUEST_TYPE;  // Type
+    packet[1] = 0;                        // Code
+    packet[2] = 0;                        // Checksum (high byte)
+    packet[3] = 0;                        // Checksum (low byte)
     packet[4] = static_cast<uint8_t>(identifier >> 8);
     packet[5] = static_cast<uint8_t>(identifier & 0xFF);
     packet[6] = static_cast<uint8_t>(sequence >> 8);
@@ -102,20 +105,24 @@ core::PingResult PingService::performPing(const std::string& address,
     result.timestamp = std::chrono::system_clock::now();
     result.success = false;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
     std::string resolvedAddress = resolveHostname(address);
 
-    int sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
     if (sock < 0) {
-        result.errorMessage = "Failed to create raw socket (need CAP_NET_RAW)";
-        spdlog::warn("Ping to {} failed: {}", address, result.errorMessage);
-        return result;
+        // Try raw socket (requires privileges)
+        sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+        if (sock < 0) {
+            result.errorMessage = "Failed to create ICMP socket";
+            spdlog::warn("Ping to {} failed: {}", address, result.errorMessage);
+            return result;
+        }
     }
 
     // Set receive timeout
     struct timeval tv {};
-    tv.tv_sec = timeout.count() / 1000;
-    tv.tv_usec = (timeout.count() % 1000) * 1000;
+    tv.tv_sec = static_cast<time_t>(timeout.count() / 1000);
+    tv.tv_usec = static_cast<suseconds_t>((timeout.count() % 1000) * 1000);
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     struct sockaddr_in dest {};
@@ -157,9 +164,11 @@ core::PingResult PingService::performPing(const std::string& address,
         size_t ipHeaderLen = static_cast<size_t>((ipHeader[0] & 0x0F) * 4);
         auto* icmpHeader = recvBuffer.data() + ipHeaderLen;
 
-        if (icmpHeader[0] == ICMP_ECHO_REPLY) {
-            uint16_t recvId = (static_cast<uint16_t>(icmpHeader[4]) << 8) | icmpHeader[5];
-            uint16_t recvSeq = (static_cast<uint16_t>(icmpHeader[6]) << 8) | icmpHeader[7];
+        if (icmpHeader[0] == ICMP_ECHO_REPLY_TYPE) {
+            uint16_t recvId = static_cast<uint16_t>(
+                (static_cast<uint16_t>(icmpHeader[4]) << 8) | icmpHeader[5]);
+            uint16_t recvSeq = static_cast<uint16_t>(
+                (static_cast<uint16_t>(icmpHeader[6]) << 8) | icmpHeader[7]);
 
             if (recvId == identifier_ && recvSeq == seq) {
                 result.success = true;
@@ -173,6 +182,8 @@ core::PingResult PingService::performPing(const std::string& address,
         }
     }
 #else
+    (void)address;
+    (void)timeout;
     result.errorMessage = "ICMP ping not implemented for this platform";
 #endif
 
