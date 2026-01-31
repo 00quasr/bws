@@ -175,6 +175,7 @@ if(BUILD_TESTING)
         tests/unit/test_Host.cpp
         tests/unit/test_HostGroup.cpp
         tests/unit/test_HostRepository.cpp
+        tests/unit/test_MetricsRepository.cpp
         tests/unit/test_Database.cpp
         tests/unit/test_PingService.cpp
         tests/unit/test_SparklineWidget.cpp
