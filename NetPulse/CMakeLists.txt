@@ -188,6 +188,7 @@ if(BUILD_TESTING)
         tests/unit/test_RestApiServer.cpp
         tests/unit/test_SnmpService.cpp
         tests/unit/test_PluginSystem.cpp
+        tests/unit/test_ConfigManager.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )
