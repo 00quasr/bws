@@ -104,6 +104,10 @@ nlohmann::json ConfigManager::toJson() const {
     j["webhooks"]["timeout_ms"] = config_.webhookTimeoutMs;
     j["webhooks"]["max_retries"] = config_.webhookMaxRetries;
 
+    // REST API
+    j["rest_api"]["enabled"] = config_.restApiEnabled;
+    j["rest_api"]["port"] = config_.restApiPort;
+
     // Encrypted values
     if (!secureValues_.empty()) {
         j["secure"] = secureValues_;
@@ -175,6 +179,13 @@ void ConfigManager::fromJson(const nlohmann::json& j) {
         config_.webhooksEnabled = wh.value("enabled", true);
         config_.webhookTimeoutMs = wh.value("timeout_ms", 5000);
         config_.webhookMaxRetries = wh.value("max_retries", 3);
+    }
+
+    // REST API
+    if (j.contains("rest_api")) {
+        const auto& api = j["rest_api"];
+        config_.restApiEnabled = api.value("enabled", false);
+        config_.restApiPort = api.value("port", 8080);
     }
 
     // Secure values

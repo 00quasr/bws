@@ -62,6 +62,7 @@ add_library(netpulse_infra STATIC
     src/infrastructure/config/ConfigManager.cpp
     src/infrastructure/notifications/HttpClient.cpp
     src/infrastructure/notifications/NotificationService.cpp
+    src/infrastructure/api/RestApiServer.cpp
 )
 target_include_directories(netpulse_infra PUBLIC src)
 if(ASIO_INCLUDE_DIR)
@@ -163,6 +164,7 @@ if(BUILD_TESTING)
         tests/unit/test_TopologyWidget.cpp
         tests/unit/test_ScheduledPortScan.cpp
         tests/unit/test_NotificationService.cpp
+        tests/unit/test_RestApiServer.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )

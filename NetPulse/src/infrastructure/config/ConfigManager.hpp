@@ -46,6 +46,10 @@ struct AppConfig {
     bool webhooksEnabled{true};
     int webhookTimeoutMs{5000};
     int webhookMaxRetries{3};
+
+    // REST API settings
+    bool restApiEnabled{false};
+    uint16_t restApiPort{8080};
 };
 
 class ConfigManager {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "infrastructure/api/RestApiServer.hpp"
 #include "infrastructure/config/ConfigManager.hpp"
 #include "infrastructure/database/Database.hpp"
 #include "infrastructure/network/AsioContext.hpp"
@@ -35,6 +36,7 @@ public:
     viewmodels::HostGroupViewModel& hostGroupViewModel() { return *hostGroupViewModel_; }
     viewmodels::AlertsViewModel& alertsViewModel() { return *alertsViewModel_; }
     infra::NotificationService& notificationService() { return *notificationService_; }
+    infra::RestApiServer* restApiServer() { return restApiServer_.get(); }
 
     static Application& instance();
 
@@ -55,6 +57,7 @@ private:
     std::unique_ptr<viewmodels::HostGroupViewModel> hostGroupViewModel_;
     std::unique_ptr<viewmodels::AlertsViewModel> alertsViewModel_;
     std::shared_ptr<infra::NotificationService> notificationService_;
+    std::shared_ptr<infra::RestApiServer> restApiServer_;
 
     static Application* instance_;
 };

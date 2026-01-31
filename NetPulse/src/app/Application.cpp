@@ -26,6 +26,10 @@ Application::Application(int& argc, char** argv) {
 Application::~Application() {
     spdlog::info("Application shutting down...");
 
+    if (restApiServer_) {
+        restApiServer_->stop();
+    }
+
     if (dashboardViewModel_) {
         dashboardViewModel_->stopMonitoring();
     }
@@ -95,6 +99,20 @@ void Application::initializeComponents() {
 
     // Configure alert thresholds
     alertsViewModel_->setThresholds(config_->config().alertThresholds);
+
+    // REST API server
+    if (config_->config().restApiEnabled) {
+        restApiServer_ = std::make_shared<infra::RestApiServer>(
+            *asioContext_, database_, config_->config().restApiPort);
+
+        // Load API key from secure storage
+        auto apiKey = config_->getSecureValue("rest_api_key");
+        if (apiKey) {
+            restApiServer_->setApiKey(*apiKey);
+        }
+
+        restApiServer_->start();
+    }
 
     spdlog::info("Application components initialized");
 }
