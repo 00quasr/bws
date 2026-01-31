@@ -217,6 +217,54 @@ std::vector<core::Alert> MetricsRepository::getAlerts(int limit) {
     return alerts;
 }
 
+std::vector<core::Alert> MetricsRepository::getAlertsFiltered(const core::AlertFilter& filter,
+                                                               int limit) {
+    std::vector<core::Alert> alerts;
+
+    std::string sql = R"(
+        SELECT id, host_id, alert_type, severity, title, message, timestamp, acknowledged
+        FROM alerts WHERE 1=1
+    )";
+
+    if (filter.severity.has_value()) {
+        sql += " AND severity = " + std::to_string(static_cast<int>(*filter.severity));
+    }
+    if (filter.type.has_value()) {
+        sql += " AND alert_type = " + std::to_string(static_cast<int>(*filter.type));
+    }
+    if (filter.acknowledged.has_value()) {
+        sql += " AND acknowledged = " + std::to_string(*filter.acknowledged ? 1 : 0);
+    }
+    if (!filter.searchText.empty()) {
+        sql += " AND (title LIKE ? OR message LIKE ?)";
+    }
+
+    sql += " ORDER BY timestamp DESC LIMIT " + std::to_string(limit);
+
+    auto stmt = db_->prepare(sql);
+
+    if (!filter.searchText.empty()) {
+        std::string searchPattern = "%" + filter.searchText + "%";
+        stmt.bind(1, searchPattern);
+        stmt.bind(2, searchPattern);
+    }
+
+    while (stmt.step()) {
+        core::Alert alert;
+        alert.id = stmt.columnInt64(0);
+        alert.hostId = stmt.columnInt64(1);
+        alert.type = static_cast<core::AlertType>(stmt.columnInt(2));
+        alert.severity = static_cast<core::AlertSeverity>(stmt.columnInt(3));
+        alert.title = stmt.columnText(4);
+        alert.message = stmt.columnText(5);
+        alert.timestamp = stringToTimePoint(stmt.columnText(6));
+        alert.acknowledged = stmt.columnInt(7) != 0;
+        alerts.push_back(alert);
+    }
+
+    return alerts;
+}
+
 std::vector<core::Alert> MetricsRepository::getUnacknowledgedAlerts() {
     std::vector<core::Alert> alerts;
     auto stmt = db_->prepare(R"(

@@ -149,6 +149,7 @@ if(BUILD_TESTING)
         tests/unit/test_SparklineWidget.cpp
         tests/unit/test_DashboardWidget.cpp
         tests/unit/test_NocHostCard.cpp
+        tests/unit/test_AlertFilter.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )

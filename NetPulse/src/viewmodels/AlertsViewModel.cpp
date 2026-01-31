@@ -100,6 +100,11 @@ std::vector<core::Alert> AlertsViewModel::getRecentAlerts(int limit) const {
     return metricsRepo_->getAlerts(limit);
 }
 
+std::vector<core::Alert> AlertsViewModel::getFilteredAlerts(const core::AlertFilter& filter,
+                                                             int limit) const {
+    return metricsRepo_->getAlertsFiltered(filter, limit);
+}
+
 void AlertsViewModel::acknowledgeAlert(int64_t alertId) {
     metricsRepo_->acknowledgeAlert(alertId);
     emit alertAcknowledged(alertId);

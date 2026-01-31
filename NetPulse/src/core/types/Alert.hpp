@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace netpulse::core {
@@ -40,6 +41,18 @@ struct AlertThresholds {
     double packetLossWarningPercent{5.0};
     double packetLossCriticalPercent{20.0};
     int consecutiveFailuresForDown{3};
+};
+
+struct AlertFilter {
+    std::optional<AlertSeverity> severity;
+    std::optional<AlertType> type;
+    std::optional<bool> acknowledged;
+    std::string searchText;
+
+    [[nodiscard]] bool isEmpty() const {
+        return !severity.has_value() && !type.has_value() && !acknowledged.has_value() &&
+               searchText.empty();
+    }
 };
 
 } // namespace netpulse::core

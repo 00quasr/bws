@@ -28,6 +28,8 @@ public:
     void unsubscribeAll() override;
 
     std::vector<core::Alert> getRecentAlerts(int limit = 100) const override;
+    std::vector<core::Alert> getFilteredAlerts(const core::AlertFilter& filter,
+                                                int limit = 100) const override;
     void acknowledgeAlert(int64_t alertId) override;
     void clearAlerts() override;
 

@@ -24,6 +24,8 @@ public:
     virtual void unsubscribeAll() = 0;
 
     virtual std::vector<Alert> getRecentAlerts(int limit = 100) const = 0;
+    virtual std::vector<Alert> getFilteredAlerts(const AlertFilter& filter,
+                                                  int limit = 100) const = 0;
     virtual void acknowledgeAlert(int64_t alertId) = 0;
     virtual void clearAlerts() = 0;
 };

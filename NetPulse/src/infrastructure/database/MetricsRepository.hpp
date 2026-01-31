@@ -26,6 +26,7 @@ public:
     // Alerts
     int64_t insertAlert(const core::Alert& alert);
     std::vector<core::Alert> getAlerts(int limit = 100);
+    std::vector<core::Alert> getAlertsFiltered(const core::AlertFilter& filter, int limit = 100);
     std::vector<core::Alert> getUnacknowledgedAlerts();
     void acknowledgeAlert(int64_t id);
     void acknowledgeAll();

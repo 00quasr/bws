@@ -1,7 +1,10 @@
 #pragma once
 
+#include "core/types/Alert.hpp"
 #include "ui/widgets/dashboard/DashboardWidget.hpp"
 
+#include <QComboBox>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QTimer>
 
@@ -23,9 +26,21 @@ public:
 signals:
     void alertClicked(int64_t alertId);
 
+private slots:
+    void onFilterChanged();
+    void onSearchTextChanged(const QString& text);
+
 private:
+    void setupFilterBar();
+    [[nodiscard]] core::AlertFilter buildFilter() const;
+
+    QLineEdit* searchEdit_{nullptr};
+    QComboBox* severityCombo_{nullptr};
+    QComboBox* typeCombo_{nullptr};
+    QComboBox* statusCombo_{nullptr};
     QListWidget* alertList_{nullptr};
     QTimer* refreshTimer_{nullptr};
+    QTimer* searchDebounceTimer_{nullptr};
     int maxAlerts_{10};
 };
 
