@@ -119,6 +119,7 @@ add_executable(netpulse
     src/ui/widgets/dashboard/AlertsWidget.cpp
     src/ui/widgets/dashboard/NetworkOverviewWidget.cpp
     src/ui/widgets/dashboard/LatencyHistoryWidget.cpp
+    src/ui/widgets/dashboard/TopologyWidget.cpp
     src/ui/widgets/noc/NocHostCard.cpp
     src/ui/widgets/noc/NocDisplayWidget.cpp
     ${UI_RESOURCES}
@@ -150,6 +151,7 @@ if(BUILD_TESTING)
         tests/unit/test_DashboardWidget.cpp
         tests/unit/test_NocHostCard.cpp
         tests/unit/test_AlertFilter.cpp
+        tests/unit/test_TopologyWidget.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )

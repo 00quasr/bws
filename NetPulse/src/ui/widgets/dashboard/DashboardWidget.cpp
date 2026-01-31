@@ -91,6 +91,8 @@ QString widgetTypeToString(WidgetType type) {
         return "NetworkOverview";
     case WidgetType::LatencyHistory:
         return "LatencyHistory";
+    case WidgetType::Topology:
+        return "Topology";
     }
     return "Unknown";
 }
@@ -106,6 +108,8 @@ WidgetType widgetTypeFromString(const QString& str) {
         return WidgetType::NetworkOverview;
     if (str == "LatencyHistory")
         return WidgetType::LatencyHistory;
+    if (str == "Topology")
+        return WidgetType::Topology;
     return WidgetType::Statistics;
 }
 

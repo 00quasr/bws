@@ -5,6 +5,7 @@
 #include "ui/widgets/dashboard/LatencyHistoryWidget.hpp"
 #include "ui/widgets/dashboard/NetworkOverviewWidget.hpp"
 #include "ui/widgets/dashboard/StatisticsWidget.hpp"
+#include "ui/widgets/dashboard/TopologyWidget.hpp"
 
 namespace netpulse::ui {
 
@@ -20,6 +21,8 @@ std::unique_ptr<DashboardWidget> WidgetFactory::create(WidgetType type, QWidget*
         return std::make_unique<NetworkOverviewWidget>(parent);
     case WidgetType::LatencyHistory:
         return std::make_unique<LatencyHistoryWidget>(parent);
+    case WidgetType::Topology:
+        return std::make_unique<TopologyWidget>(parent);
     }
     return std::make_unique<StatisticsWidget>(parent);
 }

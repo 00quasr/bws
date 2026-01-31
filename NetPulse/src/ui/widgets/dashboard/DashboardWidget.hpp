@@ -15,7 +15,8 @@ enum class WidgetType {
     HostStatus,
     Alerts,
     NetworkOverview,
-    LatencyHistory
+    LatencyHistory,
+    Topology
 };
 
 struct WidgetConfig {
