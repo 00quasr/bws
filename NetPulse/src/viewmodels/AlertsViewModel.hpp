@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/services/IAlertService.hpp"
+#include "core/services/INotificationService.hpp"
 #include "core/types/Alert.hpp"
 #include "infrastructure/database/MetricsRepository.hpp"
 
@@ -15,7 +16,9 @@ class AlertsViewModel : public QObject, public core::IAlertService {
     Q_OBJECT
 
 public:
-    explicit AlertsViewModel(std::shared_ptr<infra::Database> db, QObject* parent = nullptr);
+    explicit AlertsViewModel(std::shared_ptr<infra::Database> db,
+                             std::shared_ptr<core::INotificationService> notificationService = nullptr,
+                             QObject* parent = nullptr);
 
     // IAlertService implementation
     void setThresholds(const core::AlertThresholds& thresholds) override;
@@ -45,8 +48,11 @@ signals:
 private:
     void triggerAlert(const core::Alert& alert);
 
+    std::string getHostName(int64_t hostId) const;
+
     std::shared_ptr<infra::Database> db_;
     std::unique_ptr<infra::MetricsRepository> metricsRepo_;
+    std::shared_ptr<core::INotificationService> notificationService_;
     core::AlertThresholds thresholds_;
     std::vector<AlertCallback> subscribers_;
     mutable std::mutex mutex_;
@@ -54,6 +60,7 @@ private:
     // Track consecutive failures per host
     std::map<int64_t, int> consecutiveFailures_;
     std::map<int64_t, bool> hostWasDown_;
+    std::map<int64_t, std::string> hostNames_;
 };
 
 } // namespace netpulse::viewmodels

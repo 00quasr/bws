@@ -319,7 +319,51 @@ void Database::runMigrations() {
         setVersion(3);
     }
 
+    // Migration 4: Add webhook configurations and delivery logs
+    if (currentVersion < 4) {
+        spdlog::info("Applying migration 4: Add webhook notifications");
+        execute(R"(
+            CREATE TABLE IF NOT EXISTS webhook_configs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                provider TEXT NOT NULL,
+                url TEXT,
+                api_token TEXT,
+                enabled INTEGER DEFAULT 1,
+                severity_filter TEXT DEFAULT '[]',
+                type_filter TEXT DEFAULT '[]',
+                timeout_ms INTEGER DEFAULT 5000,
+                max_retries INTEGER DEFAULT 3,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        )");
+
+        execute("CREATE INDEX IF NOT EXISTS idx_webhook_configs_enabled ON webhook_configs(enabled)");
+
+        execute(R"(
+            CREATE TABLE IF NOT EXISTS webhook_delivery_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                webhook_id INTEGER REFERENCES webhook_configs(id) ON DELETE CASCADE,
+                alert_id INTEGER,
+                success INTEGER DEFAULT 0,
+                http_status INTEGER,
+                error_message TEXT,
+                sent_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        )");
+
+        execute("CREATE INDEX IF NOT EXISTS idx_webhook_delivery_webhook ON webhook_delivery_logs(webhook_id)");
+        execute("CREATE INDEX IF NOT EXISTS idx_webhook_delivery_time ON webhook_delivery_logs(sent_at)");
+
+        setVersion(4);
+    }
+
     spdlog::info("Database migrations complete. Version: {}", getCurrentVersion());
+}
+
+sqlite3_stmt* Database::getStmtHandle(Statement& stmt) const {
+    return stmt.handle();
 }
 
 } // namespace netpulse::infra

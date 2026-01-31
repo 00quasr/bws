@@ -99,6 +99,11 @@ nlohmann::json ConfigManager::toJson() const {
     j["window"]["height"] = config_.windowHeight;
     j["window"]["maximized"] = config_.windowMaximized;
 
+    // Webhooks
+    j["webhooks"]["enabled"] = config_.webhooksEnabled;
+    j["webhooks"]["timeout_ms"] = config_.webhookTimeoutMs;
+    j["webhooks"]["max_retries"] = config_.webhookMaxRetries;
+
     // Encrypted values
     if (!secureValues_.empty()) {
         j["secure"] = secureValues_;
@@ -162,6 +167,14 @@ void ConfigManager::fromJson(const nlohmann::json& j) {
         config_.windowWidth = w.value("width", 1200);
         config_.windowHeight = w.value("height", 800);
         config_.windowMaximized = w.value("maximized", false);
+    }
+
+    // Webhooks
+    if (j.contains("webhooks")) {
+        const auto& wh = j["webhooks"];
+        config_.webhooksEnabled = wh.value("enabled", true);
+        config_.webhookTimeoutMs = wh.value("timeout_ms", 5000);
+        config_.webhookMaxRetries = wh.value("max_retries", 3);
     }
 
     // Secure values

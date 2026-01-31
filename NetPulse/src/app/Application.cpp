@@ -80,13 +80,18 @@ void Application::initializeComponents() {
     pingService_ = std::make_shared<infra::PingService>(*asioContext_);
     portScanner_ = std::make_unique<infra::PortScanner>(*asioContext_);
 
+    // Notification service
+    notificationService_ = std::make_shared<infra::NotificationService>(database_);
+    notificationService_->loadWebhooksFromDatabase();
+    notificationService_->setEnabled(config_->config().webhooksEnabled);
+
     // ViewModels
     dashboardViewModel_ =
         std::make_unique<viewmodels::DashboardViewModel>(database_, pingService_);
     hostMonitorViewModel_ =
         std::make_unique<viewmodels::HostMonitorViewModel>(database_, pingService_);
     hostGroupViewModel_ = std::make_unique<viewmodels::HostGroupViewModel>(database_);
-    alertsViewModel_ = std::make_unique<viewmodels::AlertsViewModel>(database_);
+    alertsViewModel_ = std::make_unique<viewmodels::AlertsViewModel>(database_, notificationService_);
 
     // Configure alert thresholds
     alertsViewModel_->setThresholds(config_->config().alertThresholds);

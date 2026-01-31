@@ -5,6 +5,7 @@
 #include "infrastructure/network/AsioContext.hpp"
 #include "infrastructure/network/PingService.hpp"
 #include "infrastructure/network/PortScanner.hpp"
+#include "infrastructure/notifications/NotificationService.hpp"
 #include "viewmodels/AlertsViewModel.hpp"
 #include "viewmodels/DashboardViewModel.hpp"
 #include "viewmodels/HostGroupViewModel.hpp"
@@ -33,6 +34,7 @@ public:
     viewmodels::HostMonitorViewModel& hostMonitorViewModel() { return *hostMonitorViewModel_; }
     viewmodels::HostGroupViewModel& hostGroupViewModel() { return *hostGroupViewModel_; }
     viewmodels::AlertsViewModel& alertsViewModel() { return *alertsViewModel_; }
+    infra::NotificationService& notificationService() { return *notificationService_; }
 
     static Application& instance();
 
@@ -52,6 +54,7 @@ private:
     std::unique_ptr<viewmodels::HostMonitorViewModel> hostMonitorViewModel_;
     std::unique_ptr<viewmodels::HostGroupViewModel> hostGroupViewModel_;
     std::unique_ptr<viewmodels::AlertsViewModel> alertsViewModel_;
+    std::shared_ptr<infra::NotificationService> notificationService_;
 
     static Application* instance_;
 };

@@ -41,6 +41,7 @@ add_library(netpulse_core STATIC
     src/core/types/NetworkInterface.cpp
     src/core/types/Alert.cpp
     src/core/types/ScheduledPortScan.cpp
+    src/core/types/Notification.cpp
 )
 target_include_directories(netpulse_core PUBLIC src)
 target_link_libraries(netpulse_core PUBLIC nlohmann_json::nlohmann_json)
@@ -59,6 +60,8 @@ add_library(netpulse_infra STATIC
     src/infrastructure/database/ScheduledScanRepository.cpp
     src/infrastructure/crypto/SecureStorage.cpp
     src/infrastructure/config/ConfigManager.cpp
+    src/infrastructure/notifications/HttpClient.cpp
+    src/infrastructure/notifications/NotificationService.cpp
 )
 target_include_directories(netpulse_infra PUBLIC src)
 if(ASIO_INCLUDE_DIR)
@@ -70,6 +73,8 @@ target_link_libraries(netpulse_infra PUBLIC
     SQLite::SQLite3
     spdlog::spdlog
     nlohmann_json::nlohmann_json
+    Qt6::Core
+    Qt6::Network
 )
 if(unofficial-sodium_FOUND)
     target_link_libraries(netpulse_infra PUBLIC unofficial-sodium::sodium)
@@ -157,12 +162,14 @@ if(BUILD_TESTING)
         tests/unit/test_AlertFilter.cpp
         tests/unit/test_TopologyWidget.cpp
         tests/unit/test_ScheduledPortScan.cpp
+        tests/unit/test_NotificationService.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )
     target_link_libraries(netpulse_tests PRIVATE
         netpulse_viewmodels
         Qt6::Widgets
+        Qt6::Network
         Catch2::Catch2WithMain
     )
 

@@ -41,6 +41,11 @@ struct AppConfig {
     int windowWidth{1200};
     int windowHeight{800};
     bool windowMaximized{false};
+
+    // Webhook notifications
+    bool webhooksEnabled{true};
+    int webhookTimeoutMs{5000};
+    int webhookMaxRetries{3};
 };
 
 class ConfigManager {

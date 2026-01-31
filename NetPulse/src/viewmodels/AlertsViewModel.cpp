@@ -5,8 +5,10 @@
 
 namespace netpulse::viewmodels {
 
-AlertsViewModel::AlertsViewModel(std::shared_ptr<infra::Database> db, QObject* parent)
-    : QObject(parent), db_(std::move(db)) {
+AlertsViewModel::AlertsViewModel(std::shared_ptr<infra::Database> db,
+                                 std::shared_ptr<core::INotificationService> notificationService,
+                                 QObject* parent)
+    : QObject(parent), db_(std::move(db)), notificationService_(std::move(notificationService)) {
     metricsRepo_ = std::make_unique<infra::MetricsRepository>(db_);
 }
 
@@ -23,6 +25,8 @@ core::AlertThresholds AlertsViewModel::getThresholds() const {
 void AlertsViewModel::processResult(int64_t hostId, const std::string& hostName,
                                     const core::PingResult& result) {
     std::lock_guard lock(mutex_);
+
+    hostNames_[hostId] = hostName;
 
     if (result.success) {
         double latencyMs = result.latencyMs();
@@ -128,6 +132,12 @@ void AlertsViewModel::triggerAlert(const core::Alert& alert) {
     // Store in database
     metricsRepo_->insertAlert(alert);
 
+    // Send webhook notifications
+    if (notificationService_) {
+        std::string hostName = getHostName(alert.hostId);
+        notificationService_->sendAlert(alert, hostName);
+    }
+
     // Notify subscribers
     for (const auto& callback : subscribers_) {
         callback(alert);
@@ -138,6 +148,19 @@ void AlertsViewModel::triggerAlert(const core::Alert& alert) {
                               Qt::QueuedConnection);
 
     spdlog::info("Alert triggered: {} - {}", alert.title, alert.message);
+}
+
+std::string AlertsViewModel::getHostName(int64_t hostId) const {
+    auto it = hostNames_.find(hostId);
+    if (it != hostNames_.end()) {
+        return it->second;
+    }
+
+    auto results = db_->query("SELECT name FROM hosts WHERE id = ?", hostId);
+    if (!results.empty()) {
+        return results[0].at("name").get<std::string>();
+    }
+    return "Unknown Host";
 }
 
 } // namespace netpulse::viewmodels
