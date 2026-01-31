@@ -1,0 +1,13 @@
+{
+  "name": "netpulse",
+  "version": "1.0.0",
+  "description": "Network Monitor Dashboard",
+  "dependencies": [
+    "asio",
+    "libsodium",
+    "nlohmann-json",
+    "spdlog",
+    "sqlite3",
+    "catch2"
+  ]
+}
