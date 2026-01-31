@@ -3,6 +3,10 @@
 namespace netpulse::core {
 
 std::string PortScanResult::stateToString() const {
+    return portStateToString(state);
+}
+
+std::string PortScanResult::portStateToString(PortState state) {
     switch (state) {
     case PortState::Unknown:
         return "Unknown";

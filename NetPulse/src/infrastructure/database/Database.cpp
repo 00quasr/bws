@@ -277,6 +277,48 @@ void Database::runMigrations() {
         setVersion(2);
     }
 
+    // Migration 3: Add scheduled scans and port scan diffs
+    if (currentVersion < 3) {
+        spdlog::info("Applying migration 3: Add scheduled scans and port scan diffs");
+        execute(R"(
+            CREATE TABLE IF NOT EXISTS scheduled_scans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                target_address TEXT NOT NULL,
+                port_range TEXT DEFAULT 'Common',
+                custom_ports TEXT DEFAULT '',
+                interval_minutes INTEGER DEFAULT 60,
+                enabled INTEGER DEFAULT 1,
+                notify_on_changes INTEGER DEFAULT 1,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                last_run_at TEXT
+            )
+        )");
+
+        execute("CREATE INDEX IF NOT EXISTS idx_scheduled_scans_enabled ON scheduled_scans(enabled)");
+        execute("CREATE INDEX IF NOT EXISTS idx_scheduled_scans_address ON scheduled_scans(target_address)");
+
+        execute(R"(
+            CREATE TABLE IF NOT EXISTS port_scan_diffs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                schedule_id INTEGER REFERENCES scheduled_scans(id) ON DELETE CASCADE,
+                target_address TEXT NOT NULL,
+                previous_scan_time TEXT,
+                current_scan_time TEXT,
+                changes_json TEXT,
+                total_ports_scanned INTEGER,
+                open_ports_before INTEGER,
+                open_ports_after INTEGER
+            )
+        )");
+
+        execute("CREATE INDEX IF NOT EXISTS idx_port_scan_diffs_schedule ON port_scan_diffs(schedule_id)");
+        execute("CREATE INDEX IF NOT EXISTS idx_port_scan_diffs_address ON port_scan_diffs(target_address)");
+        execute("CREATE INDEX IF NOT EXISTS idx_port_scan_diffs_time ON port_scan_diffs(current_scan_time)");
+
+        setVersion(3);
+    }
+
     spdlog::info("Database migrations complete. Version: {}", getCurrentVersion());
 }
 

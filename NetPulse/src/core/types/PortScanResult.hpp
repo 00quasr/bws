@@ -19,6 +19,7 @@ struct PortScanResult {
     std::chrono::system_clock::time_point scanTimestamp;
 
     [[nodiscard]] std::string stateToString() const;
+    static std::string portStateToString(PortState state);
     static PortState stateFromString(const std::string& str);
 
     bool operator==(const PortScanResult& other) const = default;

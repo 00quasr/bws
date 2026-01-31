@@ -40,6 +40,7 @@ add_library(netpulse_core STATIC
     src/core/types/PortScanResult.cpp
     src/core/types/NetworkInterface.cpp
     src/core/types/Alert.cpp
+    src/core/types/ScheduledPortScan.cpp
 )
 target_include_directories(netpulse_core PUBLIC src)
 target_link_libraries(netpulse_core PUBLIC nlohmann_json::nlohmann_json)
@@ -50,10 +51,12 @@ add_library(netpulse_infra STATIC
     src/infrastructure/network/AsioContext.cpp
     src/infrastructure/network/PingService.cpp
     src/infrastructure/network/PortScanner.cpp
+    src/infrastructure/network/ScheduledPortScanner.cpp
     src/infrastructure/database/Database.cpp
     src/infrastructure/database/HostRepository.cpp
     src/infrastructure/database/HostGroupRepository.cpp
     src/infrastructure/database/MetricsRepository.cpp
+    src/infrastructure/database/ScheduledScanRepository.cpp
     src/infrastructure/crypto/SecureStorage.cpp
     src/infrastructure/config/ConfigManager.cpp
 )
@@ -87,6 +90,7 @@ add_library(netpulse_viewmodels STATIC
     src/viewmodels/HostMonitorViewModel.cpp
     src/viewmodels/HostGroupViewModel.cpp
     src/viewmodels/AlertsViewModel.cpp
+    src/viewmodels/ScheduledScanViewModel.cpp
 )
 target_include_directories(netpulse_viewmodels PUBLIC src)
 target_link_libraries(netpulse_viewmodels PUBLIC
@@ -152,6 +156,7 @@ if(BUILD_TESTING)
         tests/unit/test_NocHostCard.cpp
         tests/unit/test_AlertFilter.cpp
         tests/unit/test_TopologyWidget.cpp
+        tests/unit/test_ScheduledPortScan.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )
