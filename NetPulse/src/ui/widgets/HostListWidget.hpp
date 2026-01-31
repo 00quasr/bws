@@ -2,6 +2,8 @@
 
 #include "core/types/Host.hpp"
 #include "core/types/HostGroup.hpp"
+#include "core/types/PingResult.hpp"
+#include "ui/widgets/SparklineWidget.hpp"
 #include "ui/widgets/StatusIndicator.hpp"
 
 #include <QTreeWidget>
@@ -18,6 +20,7 @@ public:
 
     void refreshHosts();
     void updateHostStatus(int64_t hostId);
+    void updateHostSparkline(int64_t hostId, const core::PingResult& result);
 
     int64_t selectedHostId() const;
 
@@ -37,11 +40,13 @@ private:
     void addGroupToTree(const core::HostGroup& group, QTreeWidgetItem* parent = nullptr);
     QTreeWidgetItem* createHostItem(const core::Host& host);
     void updateHostItemStatus(QTreeWidgetItem* item, const core::Host& host);
+    void initializeSparkline(int64_t hostId, SparklineWidget* sparkline, const core::Host& host);
 
     QTreeWidget* treeWidget_{nullptr};
     std::map<int64_t, QTreeWidgetItem*> hostItems_;
     std::map<int64_t, QTreeWidgetItem*> groupItems_;
     std::map<int64_t, StatusIndicator*> statusIndicators_;
+    std::map<int64_t, SparklineWidget*> sparklines_;
 };
 
 } // namespace netpulse::ui

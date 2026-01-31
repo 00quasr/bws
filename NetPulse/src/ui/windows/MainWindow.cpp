@@ -334,6 +334,7 @@ void MainWindow::onPingResult(int64_t hostId, const core::PingResult& result) {
     }
 
     hostListWidget_->updateHostStatus(hostId);
+    hostListWidget_->updateHostSparkline(hostId, result);
 }
 
 void MainWindow::onHostStatusChanged(int64_t hostId, core::HostStatus /*status*/) {

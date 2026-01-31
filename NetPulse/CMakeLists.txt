@@ -108,6 +108,7 @@ add_executable(netpulse
     src/ui/windows/PortScanDialog.cpp
     src/ui/widgets/LatencyChartWidget.cpp
     src/ui/widgets/HostListWidget.cpp
+    src/ui/widgets/SparklineWidget.cpp
     src/ui/widgets/StatusIndicator.cpp
     ${UI_RESOURCES}
 )
@@ -134,6 +135,7 @@ if(BUILD_TESTING)
         tests/unit/test_HostGroup.cpp
         tests/unit/test_Database.cpp
         tests/unit/test_PingService.cpp
+        tests/unit/test_SparklineWidget.cpp
     )
     target_link_libraries(netpulse_tests PRIVATE
         netpulse_infra

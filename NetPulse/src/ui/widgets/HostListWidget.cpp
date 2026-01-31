@@ -1,11 +1,13 @@
 #include "ui/widgets/HostListWidget.hpp"
 
 #include "app/Application.hpp"
+#include "viewmodels/DashboardViewModel.hpp"
 
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMenu>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace netpulse::ui {
@@ -15,6 +17,9 @@ constexpr int ITEM_TYPE_HOST = 1;
 constexpr int ITEM_TYPE_GROUP = 2;
 constexpr int DATA_ROLE_ID = Qt::UserRole;
 constexpr int DATA_ROLE_TYPE = Qt::UserRole + 1;
+constexpr int COLUMN_HOST = 0;
+constexpr int COLUMN_SPARKLINE = 1;
+constexpr int SPARKLINE_DATA_POINTS = 30;
 } // namespace
 
 HostListWidget::HostListWidget(QWidget* parent) : QWidget(parent) {
@@ -31,11 +36,16 @@ void HostListWidget::setupUi() {
     layout->addWidget(headerLabel);
 
     treeWidget_ = new QTreeWidget(this);
+    treeWidget_->setColumnCount(2);
     treeWidget_->setHeaderHidden(true);
     treeWidget_->setSelectionMode(QAbstractItemView::SingleSelection);
     treeWidget_->setContextMenuPolicy(Qt::CustomContextMenu);
     treeWidget_->setIndentation(20);
     treeWidget_->setAnimated(true);
+    treeWidget_->header()->setStretchLastSection(false);
+    treeWidget_->header()->setSectionResizeMode(COLUMN_HOST, QHeaderView::Stretch);
+    treeWidget_->header()->setSectionResizeMode(COLUMN_SPARKLINE, QHeaderView::Fixed);
+    treeWidget_->header()->resizeSection(COLUMN_SPARKLINE, 85);
     layout->addWidget(treeWidget_);
 
     connect(treeWidget_, &QTreeWidget::itemSelectionChanged, this,
@@ -51,6 +61,7 @@ void HostListWidget::refreshHosts() {
     hostItems_.clear();
     groupItems_.clear();
     statusIndicators_.clear();
+    sparklines_.clear();
 
     populateTree();
     treeWidget_->expandAll();
@@ -109,11 +120,26 @@ void HostListWidget::addGroupToTree(const core::HostGroup& group, QTreeWidgetIte
 
 QTreeWidgetItem* HostListWidget::createHostItem(const core::Host& host) {
     auto* item = new QTreeWidgetItem();
-    item->setData(0, DATA_ROLE_ID, QVariant::fromValue(host.id));
-    item->setData(0, DATA_ROLE_TYPE, ITEM_TYPE_HOST);
+    item->setData(COLUMN_HOST, DATA_ROLE_ID, QVariant::fromValue(host.id));
+    item->setData(COLUMN_HOST, DATA_ROLE_TYPE, ITEM_TYPE_HOST);
 
     updateHostItemStatus(item, host);
     hostItems_[host.id] = item;
+
+    // Create sparkline widget for this host
+    auto* sparkline = new SparklineWidget();
+    sparkline->setWarningThreshold(host.warningThresholdMs);
+    sparkline->setCriticalThreshold(host.criticalThresholdMs);
+    sparkline->setHostStatus(host.status);
+    sparklines_[host.id] = sparkline;
+
+    // Defer setting item widget until after item is added to tree
+    QTimer::singleShot(0, this, [this, item, sparkline, hostId = host.id, host]() {
+        if (treeWidget_ && hostItems_.count(hostId) > 0) {
+            treeWidget_->setItemWidget(item, COLUMN_SPARKLINE, sparkline);
+            initializeSparkline(hostId, sparkline, host);
+        }
+    });
 
     return item;
 }
@@ -159,7 +185,41 @@ void HostListWidget::updateHostStatus(int64_t hostId) {
 
     if (host) {
         updateHostItemStatus(it->second, *host);
+
+        // Update sparkline status color
+        auto sparklineIt = sparklines_.find(hostId);
+        if (sparklineIt != sparklines_.end()) {
+            sparklineIt->second->setHostStatus(host->status);
+        }
     }
+}
+
+void HostListWidget::updateHostSparkline(int64_t hostId, const core::PingResult& result) {
+    auto it = sparklines_.find(hostId);
+    if (it == sparklines_.end()) {
+        return;
+    }
+
+    it->second->addDataPoint(result.latencyMs(), result.success);
+}
+
+void HostListWidget::initializeSparkline(int64_t hostId, SparklineWidget* sparkline,
+                                          const core::Host& host) {
+    auto& dashboardVm = app::Application::instance().dashboardViewModel();
+    auto results = dashboardVm.getRecentResults(hostId, SPARKLINE_DATA_POINTS);
+
+    // Results are returned newest first, so reverse for chronological order
+    std::deque<double> latencies;
+    std::deque<bool> successes;
+    for (auto it = results.rbegin(); it != results.rend(); ++it) {
+        latencies.push_back(it->latencyMs());
+        successes.push_back(it->success);
+    }
+
+    sparkline->setData(latencies, successes);
+    sparkline->setWarningThreshold(host.warningThresholdMs);
+    sparkline->setCriticalThreshold(host.criticalThresholdMs);
+    sparkline->setHostStatus(host.status);
 }
 
 int64_t HostListWidget::selectedHostId() const {
