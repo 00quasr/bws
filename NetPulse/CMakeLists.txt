@@ -212,6 +212,23 @@ if(BUILD_TESTING)
     include(CTest)
     include(Catch)
     catch_discover_tests(netpulse_tests)
+
+    # Benchmark executable (requires Catch2 v3 with benchmark support)
+    if(Catch2_VERSION VERSION_GREATER_EQUAL "3.0.0")
+        add_executable(netpulse_benchmarks
+            tests/benchmarks/bench_CoreTypes.cpp
+            tests/benchmarks/bench_MetricsRepository.cpp
+            tests/benchmarks/bench_Database.cpp
+        )
+        target_link_libraries(netpulse_benchmarks PRIVATE
+            netpulse_viewmodels
+            Qt6::Core
+            Catch2::Catch2WithMain
+        )
+
+        # Benchmarks are not discovered by CTest by default (run manually)
+        # To run: ./build/netpulse_benchmarks --benchmark-samples 100
+    endif()
 endif()
 
 # Example plugin (optional)
