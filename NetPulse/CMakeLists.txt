@@ -195,6 +195,10 @@ if(BUILD_TESTING)
         tests/unit/test_PortScanResult.cpp
         tests/unit/test_Notification.cpp
         tests/unit/test_SnmpTypes.cpp
+        tests/integration/test_host_monitoring_lifecycle.cpp
+        tests/integration/test_alert_generation_workflow.cpp
+        tests/integration/test_multi_host_monitoring.cpp
+        tests/integration/test_data_retention.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )
