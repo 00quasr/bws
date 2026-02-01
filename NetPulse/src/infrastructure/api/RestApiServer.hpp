@@ -17,50 +17,119 @@
 
 namespace netpulse::infra {
 
+/**
+ * @brief HTTP method enumeration.
+ */
 enum class HttpMethod { GET, POST, PUT, DELETE, OPTIONS, UNKNOWN };
 
+/**
+ * @brief Represents an incoming API request.
+ */
 struct ApiRequest {
-    HttpMethod method{HttpMethod::UNKNOWN};
-    std::string path;
-    std::string body;
-    std::map<std::string, std::string> headers;
-    std::map<std::string, std::string> queryParams;
-    std::map<std::string, std::string> pathParams;
+    HttpMethod method{HttpMethod::UNKNOWN};         ///< HTTP method of the request.
+    std::string path;                               ///< Request path.
+    std::string body;                               ///< Request body content.
+    std::map<std::string, std::string> headers;     ///< HTTP headers.
+    std::map<std::string, std::string> queryParams; ///< Query string parameters.
+    std::map<std::string, std::string> pathParams;  ///< Path parameters from route matching.
 };
 
+/**
+ * @brief Represents an API response to send.
+ */
 struct ApiResponse {
-    int statusCode{200};
-    std::string statusText{"OK"};
-    std::string body;
-    std::map<std::string, std::string> headers;
+    int statusCode{200};                            ///< HTTP status code.
+    std::string statusText{"OK"};                   ///< HTTP status text.
+    std::string body;                               ///< Response body content.
+    std::map<std::string, std::string> headers;     ///< Response headers.
 
+    /**
+     * @brief Sets the response body as JSON.
+     * @param json JSON object to serialize as body.
+     */
     void setJson(const nlohmann::json& json);
+
+    /**
+     * @brief Sets an error response.
+     * @param code HTTP status code for the error.
+     * @param message Error message.
+     */
     void setError(int code, const std::string& message);
+
+    /**
+     * @brief Converts the response to an HTTP response string.
+     * @return Complete HTTP response string.
+     */
     std::string toString() const;
 };
 
+/**
+ * @brief Handler function type for route endpoints.
+ */
 using RouteHandler = std::function<void(const ApiRequest&, ApiResponse&)>;
 
+/**
+ * @brief Route definition for API endpoints.
+ */
 struct Route {
-    HttpMethod method;
-    std::string pattern;
-    RouteHandler handler;
-    bool requiresAuth{true};
+    HttpMethod method;         ///< HTTP method this route handles.
+    std::string pattern;       ///< URL pattern (may include path parameters).
+    RouteHandler handler;      ///< Handler function for this route.
+    bool requiresAuth{true};   ///< Whether API key authentication is required.
 };
 
+/**
+ * @brief REST API server for external access to NetPulse data.
+ *
+ * Provides a JSON-based REST API for managing hosts, groups, alerts,
+ * and metrics. Supports API key authentication and CORS.
+ *
+ * @note This class is non-copyable.
+ */
 class RestApiServer : public std::enable_shared_from_this<RestApiServer> {
 public:
+    /**
+     * @brief Constructs a RestApiServer.
+     * @param asioContext Reference to the AsioContext for async I/O.
+     * @param database Shared pointer to the Database.
+     * @param port TCP port to listen on (default 8080).
+     */
     RestApiServer(AsioContext& asioContext, std::shared_ptr<Database> database, uint16_t port = 8080);
+
+    /**
+     * @brief Destructor. Stops the server if running.
+     */
     ~RestApiServer();
 
     RestApiServer(const RestApiServer&) = delete;
     RestApiServer& operator=(const RestApiServer&) = delete;
 
+    /**
+     * @brief Starts the API server and begins accepting connections.
+     */
     void start();
+
+    /**
+     * @brief Stops the API server and closes all connections.
+     */
     void stop();
+
+    /**
+     * @brief Checks if the server is currently running.
+     * @return True if running, false otherwise.
+     */
     bool isRunning() const { return running_.load(); }
 
+    /**
+     * @brief Sets the API key for authentication.
+     * @param apiKey The API key required for authenticated endpoints.
+     */
     void setApiKey(const std::string& apiKey) { apiKey_ = apiKey; }
+
+    /**
+     * @brief Returns the port the server is listening on.
+     * @return TCP port number.
+     */
     uint16_t port() const { return port_; }
 
 private:
