@@ -11,6 +11,7 @@ set(CMAKE_AUTOUIC ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(CompilerWarnings)
 include(Dependencies)
+include(Sanitizers)
 
 # Find Qt6
 find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Network)
@@ -47,6 +48,7 @@ add_library(netpulse_core STATIC
 target_include_directories(netpulse_core PUBLIC src)
 target_link_libraries(netpulse_core PUBLIC nlohmann_json::nlohmann_json)
 set_compiler_warnings(netpulse_core)
+enable_sanitizers(netpulse_core)
 
 # Export plugin interface for external plugins
 add_library(netpulse_plugin_interface INTERFACE)
@@ -107,6 +109,7 @@ if(NOT WIN32)
 endif()
 
 set_compiler_warnings(netpulse_infra)
+enable_sanitizers(netpulse_infra)
 
 # ViewModels library
 add_library(netpulse_viewmodels STATIC
@@ -123,6 +126,7 @@ target_link_libraries(netpulse_viewmodels PUBLIC
     Qt6::Core
 )
 set_compiler_warnings(netpulse_viewmodels)
+enable_sanitizers(netpulse_viewmodels)
 
 # UI resources
 qt_add_resources(UI_RESOURCES src/ui/resources/resources.qrc)
@@ -161,6 +165,7 @@ target_link_libraries(netpulse PRIVATE
     Qt6::Network
 )
 set_compiler_warnings(netpulse)
+enable_sanitizers(netpulse)
 
 # Testing
 option(BUILD_TESTING "Build tests" ON)
@@ -195,6 +200,7 @@ if(BUILD_TESTING)
         tests/unit/test_PortScanResult.cpp
         tests/unit/test_Notification.cpp
         tests/unit/test_SnmpTypes.cpp
+        tests/unit/test_MemoryManagement.cpp
         tests/integration/test_host_monitoring_lifecycle.cpp
         tests/integration/test_alert_generation_workflow.cpp
         tests/integration/test_multi_host_monitoring.cpp
@@ -208,6 +214,7 @@ if(BUILD_TESTING)
         Qt6::Network
         Catch2::Catch2WithMain
     )
+    enable_sanitizers(netpulse_tests)
 
     include(CTest)
     include(Catch)
@@ -225,6 +232,7 @@ if(BUILD_TESTING)
             Qt6::Core
             Catch2::Catch2WithMain
         )
+        enable_sanitizers(netpulse_benchmarks)
 
         # Benchmarks are not discovered by CTest by default (run manually)
         # To run: ./build/netpulse_benchmarks --benchmark-samples 100
