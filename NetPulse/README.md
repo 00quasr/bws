@@ -4,6 +4,9 @@ A cross-platform network monitoring dashboard built with C++20 and Qt6.
 
 NetPulse is designed as a comprehensive Network Operations Center (NOC) tool for monitoring hosts, tracking latency, scanning ports, and managing network alerts in real-time.
 
+<img width="1799" height="1069" alt="grafik" src="https://github.com/user-attachments/assets/96aec4a6-fa27-4201-b62d-c286077a9479" />
+
+
 ## Features
 
 - **Host Management** - Add, edit, remove monitored hosts with configurable intervals
