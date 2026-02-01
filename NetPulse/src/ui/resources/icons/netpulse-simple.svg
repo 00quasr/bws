@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Simplified icon for small sizes -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#005a9e"/>
+      <stop offset="100%" style="stop-color:#007acc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="url(#bg)"/>
+
+  <!-- Pulse line -->
+  <polyline
+    points="10,32 20,32 26,22 32,42 38,18 44,38 50,32 54,32"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+</svg>

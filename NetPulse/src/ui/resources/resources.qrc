@@ -4,5 +4,7 @@
         <file alias="themes/DarkTheme.qss">../themes/DarkTheme.qss</file>
         <file alias="themes/LightTheme.qss">../themes/LightTheme.qss</file>
         <file alias="themes/NocTheme.qss">../themes/NocTheme.qss</file>
+        <file alias="icons/netpulse.svg">icons/netpulse.svg</file>
+        <file alias="icons/netpulse-simple.svg">icons/netpulse-simple.svg</file>
     </qresource>
 </RCC>

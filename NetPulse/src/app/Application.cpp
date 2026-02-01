@@ -1,5 +1,6 @@
 #include "app/Application.hpp"
 
+#include "ui/resources/AppIcon.hpp"
 #include "ui/windows/MainWindow.hpp"
 
 #include <QStandardPaths>
@@ -18,6 +19,7 @@ Application::Application(int& argc, char** argv) {
     qtApp_->setApplicationName("NetPulse");
     qtApp_->setApplicationVersion("1.0.0");
     qtApp_->setOrganizationName("NetPulse");
+    qtApp_->setWindowIcon(ui::AppIcon::applicationIcon());
 
     initializeLogging();
     initializeComponents();

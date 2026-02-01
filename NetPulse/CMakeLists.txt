@@ -136,6 +136,7 @@ add_executable(netpulse
     src/main.cpp
     src/app/Application.cpp
     src/app/SingleInstance.cpp
+    src/ui/resources/AppIcon.cpp
     src/ui/windows/MainWindow.cpp
     src/ui/windows/SettingsDialog.cpp
     src/ui/windows/PortScanDialog.cpp
@@ -202,13 +203,17 @@ if(BUILD_TESTING)
         tests/unit/test_Notification.cpp
         tests/unit/test_SnmpTypes.cpp
         tests/unit/test_MemoryManagement.cpp
+        tests/unit/test_AppBranding.cpp
         tests/integration/test_host_monitoring_lifecycle.cpp
         tests/integration/test_alert_generation_workflow.cpp
         tests/integration/test_multi_host_monitoring.cpp
         tests/integration/test_data_retention.cpp
+        src/ui/resources/AppIcon.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
+        ${UI_RESOURCES}
     )
+    target_include_directories(netpulse_tests PRIVATE src)
     target_link_libraries(netpulse_tests PRIVATE
         netpulse_viewmodels
         Qt6::Widgets

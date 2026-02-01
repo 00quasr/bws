@@ -1,6 +1,7 @@
 #include "ui/windows/MainWindow.hpp"
 
 #include "app/Application.hpp"
+#include "ui/resources/AppIcon.hpp"
 #include "ui/windows/PortScanDialog.hpp"
 #include "ui/windows/SettingsDialog.hpp"
 
@@ -22,6 +23,9 @@ namespace netpulse::ui {
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setWindowTitle("NetPulse - Network Monitor");
     setMinimumSize(800, 600);
+
+    // Set application icon
+    setWindowIcon(AppIcon::applicationIcon());
 
     setupUi();
     setupMenuBar();
@@ -189,7 +193,8 @@ void MainWindow::setupStatusBar() {
 
 void MainWindow::setupSystemTray() {
     trayIcon_ = new QSystemTrayIcon(this);
-    trayIcon_->setToolTip("NetPulse");
+    trayIcon_->setIcon(AppIcon::trayIcon());
+    trayIcon_->setToolTip("NetPulse - Network Monitor");
 
     trayMenu_ = new QMenu(this);
     trayMenu_->addAction("Show", this, &QMainWindow::show);
