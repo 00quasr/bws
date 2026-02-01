@@ -193,6 +193,7 @@ if(BUILD_TESTING)
         tests/unit/test_RestApiServer.cpp
         tests/unit/test_SnmpService.cpp
         tests/unit/test_PluginSystem.cpp
+        tests/unit/test_ExtensionDeveloperGuide.cpp
         tests/unit/test_ConfigManager.cpp
         tests/unit/test_AlertsViewModel.cpp
         tests/unit/test_Alert.cpp
