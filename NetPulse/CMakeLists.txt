@@ -190,6 +190,11 @@ if(BUILD_TESTING)
         tests/unit/test_PluginSystem.cpp
         tests/unit/test_ConfigManager.cpp
         tests/unit/test_AlertsViewModel.cpp
+        tests/unit/test_Alert.cpp
+        tests/unit/test_PingResult.cpp
+        tests/unit/test_PortScanResult.cpp
+        tests/unit/test_Notification.cpp
+        tests/unit/test_SnmpTypes.cpp
         src/ui/widgets/dashboard/DashboardWidget.cpp
         src/ui/widgets/noc/NocHostCard.cpp
     )
