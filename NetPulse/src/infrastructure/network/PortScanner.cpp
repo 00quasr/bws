@@ -41,98 +41,121 @@ void PortScanner::scanAsync(const core::PortScanConfig& config, ResultCallback o
 
         semaphore_->acquire();
 
-        context_.post([this, address = config.targetAddress, port, timeout = config.timeout,
-                       onResult, onProgress, onComplete, progress, results, completedCount,
-                       openCount, resultsMutex, totalPorts = ports.size()]() {
-            if (cancelled_) {
-                semaphore_->release();
-                return;
-            }
+        // Create shared state for this port scan
+        auto scanState = std::make_shared<struct ScanState>();
+        scanState->socket = std::make_shared<asio::ip::tcp::socket>(context_.getContext());
+        scanState->timer = std::make_shared<asio::steady_timer>(context_.getContext());
+        scanState->result.targetAddress = config.targetAddress;
+        scanState->result.port = port;
+        scanState->result.scanTimestamp = std::chrono::system_clock::now();
 
-            core::PortScanResult result;
-            result.targetAddress = address;
-            result.port = port;
-            result.scanTimestamp = std::chrono::system_clock::now();
-
-            try {
-                asio::io_context& ctx = context_.getContext();
-                asio::ip::tcp::socket socket(ctx);
-                asio::ip::tcp::endpoint endpoint(asio::ip::make_address(address), port);
-
-                asio::steady_timer timer(ctx);
-                timer.expires_after(timeout);
-
-                std::atomic<bool> connected{false};
-                std::atomic<bool> timedOut{false};
-
-                socket.async_connect(endpoint, [&](const asio::error_code& ec) {
-                    if (!timedOut) {
-                        connected = !ec;
-                        timer.cancel();
-                    }
-                });
-
-                timer.async_wait([&](const asio::error_code& ec) {
-                    if (!ec && !connected) {
-                        timedOut = true;
-                        socket.close();
-                    }
-                });
-
-                // Run until both operations complete
-                while (!connected && !timedOut) {
-                    ctx.run_one();
-                }
-
-                if (connected) {
-                    result.state = core::PortState::Open;
-                    result.serviceName = core::ServiceDetector::detectService(port);
-                    (*openCount)++;
-                } else if (timedOut) {
-                    result.state = core::PortState::Filtered;
-                } else {
-                    result.state = core::PortState::Closed;
-                }
-
-                socket.close();
-            } catch (const std::exception& e) {
-                result.state = core::PortState::Closed;
-            }
-
-            // Store result
-            {
-                std::lock_guard lock(*resultsMutex);
-                if (result.state == core::PortState::Open) {
-                    results->push_back(result);
-                }
-            }
-
-            // Report individual result
-            if (onResult && result.state == core::PortState::Open) {
-                onResult(result);
-            }
-
-            // Update progress
-            int completed = ++(*completedCount);
-            if (onProgress) {
-                progress->scannedPorts = completed;
-                progress->openPorts = openCount->load();
-                progress->cancelled = cancelled_.load();
-                onProgress(*progress);
-            }
-
+        if (cancelled_) {
             semaphore_->release();
+            break;
+        }
 
-            // Check if scan is complete
-            if (completed == static_cast<int>(totalPorts)) {
-                scanning_ = false;
-                spdlog::info("Port scan complete: {} open ports found", openCount->load());
-                if (onComplete) {
-                    std::lock_guard lock(*resultsMutex);
-                    onComplete(*results);
-                }
-            }
-        });
+        try {
+            asio::ip::tcp::endpoint endpoint(asio::ip::make_address(config.targetAddress), port);
+
+            // Start timeout timer
+            scanState->timer->expires_after(config.timeout);
+            scanState->timer->async_wait(
+                [this, scanState, onResult, onProgress, onComplete, progress, results,
+                 completedCount, openCount, resultsMutex,
+                 totalPorts = ports.size()](const asio::error_code& ec) {
+                    if (ec || scanState->completed.exchange(true)) {
+                        return; // Timer cancelled or already completed
+                    }
+
+                    // Timeout occurred
+                    try {
+                        scanState->socket->close();
+                    } catch (...) {
+                    }
+                    scanState->result.state = core::PortState::Filtered;
+
+                    finishPortScan(scanState->result, onResult, onProgress, onComplete, progress,
+                                   results, completedCount, openCount, resultsMutex, totalPorts);
+                });
+
+            // Start async connect
+            scanState->socket->async_connect(
+                endpoint,
+                [this, scanState, onResult, onProgress, onComplete, progress, results,
+                 completedCount, openCount, resultsMutex,
+                 totalPorts = ports.size()](const asio::error_code& ec) {
+                    if (scanState->completed.exchange(true)) {
+                        return; // Already completed (timeout)
+                    }
+
+                    // Cancel the timer
+                    scanState->timer->cancel();
+
+                    if (!ec) {
+                        scanState->result.state = core::PortState::Open;
+                        scanState->result.serviceName =
+                            core::ServiceDetector::detectService(scanState->result.port);
+                        (*openCount)++;
+                    } else {
+                        scanState->result.state = core::PortState::Closed;
+                    }
+
+                    try {
+                        scanState->socket->close();
+                    } catch (...) {
+                    }
+
+                    finishPortScan(scanState->result, onResult, onProgress, onComplete, progress,
+                                   results, completedCount, openCount, resultsMutex, totalPorts);
+                });
+
+        } catch (const std::exception& e) {
+            // Invalid address or other error
+            spdlog::debug("Port scan error for {}:{} - {}", config.targetAddress, port, e.what());
+            scanState->result.state = core::PortState::Closed;
+            finishPortScan(scanState->result, onResult, onProgress, onComplete, progress, results,
+                           completedCount, openCount, resultsMutex, ports.size());
+        }
+    }
+}
+
+void PortScanner::finishPortScan(const core::PortScanResult& result, ResultCallback onResult,
+                                  ProgressCallback onProgress, CompletionCallback onComplete,
+                                  std::shared_ptr<core::PortScanProgress> progress,
+                                  std::shared_ptr<std::vector<core::PortScanResult>> results,
+                                  std::shared_ptr<std::atomic<int>> completedCount,
+                                  std::shared_ptr<std::atomic<int>> openCount,
+                                  std::shared_ptr<std::mutex> resultsMutex, size_t totalPorts) {
+    // Store result
+    if (result.state == core::PortState::Open) {
+        std::lock_guard lock(*resultsMutex);
+        results->push_back(result);
+    }
+
+    // Report individual result
+    if (onResult && result.state == core::PortState::Open) {
+        onResult(result);
+    }
+
+    // Update progress
+    int completed = ++(*completedCount);
+    if (onProgress) {
+        progress->scannedPorts = completed;
+        progress->openPorts = openCount->load();
+        progress->cancelled = cancelled_.load();
+        onProgress(*progress);
+    }
+
+    semaphore_->release();
+
+    // Check if scan is complete
+    if (completed == static_cast<int>(totalPorts)) {
+        scanning_ = false;
+        spdlog::info("Port scan complete: {} open ports found", openCount->load());
+        if (onComplete) {
+            std::lock_guard lock(*resultsMutex);
+            onComplete(*results);
+        }
     }
 }
 

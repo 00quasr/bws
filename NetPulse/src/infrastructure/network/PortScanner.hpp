@@ -56,8 +56,20 @@ public:
     bool isScanning() const override;
 
 private:
-    void scanPort(const std::string& address, uint16_t port, std::chrono::milliseconds timeout,
-                  ResultCallback onResult);
+    struct ScanState {
+        std::shared_ptr<asio::ip::tcp::socket> socket;
+        std::shared_ptr<asio::steady_timer> timer;
+        core::PortScanResult result;
+        std::atomic<bool> completed{false};
+    };
+
+    void finishPortScan(const core::PortScanResult& result, ResultCallback onResult,
+                        ProgressCallback onProgress, CompletionCallback onComplete,
+                        std::shared_ptr<core::PortScanProgress> progress,
+                        std::shared_ptr<std::vector<core::PortScanResult>> results,
+                        std::shared_ptr<std::atomic<int>> completedCount,
+                        std::shared_ptr<std::atomic<int>> openCount,
+                        std::shared_ptr<std::mutex> resultsMutex, size_t totalPorts);
 
     AsioContext& context_;
     std::atomic<bool> scanning_{false};

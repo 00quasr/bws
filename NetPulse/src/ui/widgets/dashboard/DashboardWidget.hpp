@@ -26,7 +26,7 @@ struct WidgetConfig {
     int col{0};
     int rowSpan{1};
     int colSpan{1};
-    nlohmann::json settings;
+    nlohmann::json settings = nlohmann::json::object();
 
     [[nodiscard]] nlohmann::json toJson() const;
     static WidgetConfig fromJson(const nlohmann::json& j);

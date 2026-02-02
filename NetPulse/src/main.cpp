@@ -28,8 +28,11 @@ int main(int argc, char* argv[]) {
         return app.run();
     } catch (const std::exception& e) {
         spdlog::critical("Fatal error: {}", e.what());
-        QMessageBox::critical(nullptr, "NetPulse Error",
-                              QString("A fatal error occurred:\n%1").arg(e.what()));
+        // Only show message box if QApplication exists
+        if (QCoreApplication::instance()) {
+            QMessageBox::critical(nullptr, "NetPulse Error",
+                                  QString("A fatal error occurred:\n%1").arg(e.what()));
+        }
         return 1;
     }
 }
